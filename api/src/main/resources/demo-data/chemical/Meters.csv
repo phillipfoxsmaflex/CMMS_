@@ -1,0 +1,68 @@
+ID,Name,Unit,Update Frequency,Category,Location Name
+,Runtime-Hours,Reactor-1,Hours,60,Runtime,Reactor Building
+,Runtime-Hours,Reactor-2,Hours,60,Runtime,Reactor Building
+,Runtime-Hours,Distillation-Column-1,Hours,60,Runtime,Distillation Unit
+,Runtime-Hours,Distillation-Column-2,Hours,60,Runtime,Distillation Unit
+,Runtime-Hours,Tank-1,Hours,60,Runtime,Storage Tanks Area
+,Runtime-Hours,Tank-2,Hours,60,Runtime,Storage Tanks Area
+,Runtime-Hours,Tank-3,Hours,60,Runtime,Storage Tanks Area
+,Runtime-Hours,Pump-1,Hours,60,Runtime,Reactor Building
+,Runtime-Hours,Pump-2,Hours,60,Runtime,Reactor Building
+,Runtime-Hours,Pump-3,Hours,60,Runtime,Distillation Unit
+,Runtime-Hours,Compressor-1,Hours,60,Runtime,Reactor Building
+,Runtime-Hours,Compressor-2,Hours,60,Runtime,Storage Tanks Area
+,Runtime-Hours,Analyzer-1,Hours,60,Runtime,Laboratory
+,Runtime-Hours,Analyzer-2,Hours,60,Runtime,Laboratory
+,Runtime-Hours,Safety-Shower-1,Hours,60,Runtime,Safety Equipment Room
+,Runtime-Hours,Safety-Shower-2,Hours,60,Runtime,Safety Equipment Room
+,Runtime-Hours,Scrubber-1,Hours,60,Runtime,Environmental Monitoring
+,Runtime-Hours,Scrubber-2,Hours,60,Runtime,Environmental Monitoring
+,Runtime-Hours,Generator-1,Hours,60,Runtime,Chemical Plant
+,Runtime-Hours,Generator-2,Hours,60,Runtime,Control Room
+,Temperature,Reactor-1,°C,5,Process,Reactor Building
+,Temperature,Reactor-2,°C,5,Process,Reactor Building
+,Temperature,Distillation-Column-1,°C,5,Process,Distillation Unit
+,Temperature,Distillation-Column-2,°C,5,Process,Distillation Unit
+,Temperature,Tank-1,°C,5,Storage,Storage Tanks Area
+,Temperature,Tank-2,°C,5,Storage,Storage Tanks Area
+,Temperature,Tank-3,°C,5,Storage,Storage Tanks Area
+,Pressure,Reactor-1,bar,2,Process,Reactor Building
+,Pressure,Reactor-2,bar,2,Process,Reactor Building
+,Pressure,Distillation-Column-1,bar,2,Process,Distillation Unit
+,Pressure,Distillation-Column-2,bar,2,Process,Distillation Unit
+,Pressure,Tank-1,bar,2,Storage,Storage Tanks Area
+,Pressure,Tank-2,bar,2,Storage,Storage Tanks Area
+,Pressure,Tank-3,bar,2,Storage,Storage Tanks Area
+,Flow-Rate,Pump-1,L/min,1,Process,Reactor Building
+,Flow-Rate,Pump-2,L/min,1,Process,Reactor Building
+,Flow-Rate,Pump-3,L/min,1,Process,Distillation Unit
+,pH,Reactor-1,,5,Process,Reactor Building
+,pH,Reactor-2,,5,Process,Reactor Building
+,pH,Tank-1,,5,Storage,Storage Tanks Area
+,pH,Tank-2,,5,Storage,Storage Tanks Area
+,pH,Tank-3,,5,Storage,Storage Tanks Area
+,Conductivity,Reactor-1,μS/cm,5,Process,Reactor Building
+,Conductivity,Reactor-2,μS/cm,5,Process,Reactor Building
+,Conductivity,Tank-1,μS/cm,5,Storage,Storage Tanks Area
+,Conductivity,Tank-2,μS/cm,5,Storage,Storage Tanks Area
+,Conductivity,Tank-3,μS/cm,5,Storage,Storage Tanks Area
+,Vibration,Pump-1,mm/s,1,Process,Reactor Building
+,Vibration,Pump-2,mm/s,1,Process,Reactor Building
+,Vibration,Pump-3,mm/s,1,Process,Distillation Unit
+,Energy-Consumption,Reactor-1,kWh,15,Energy,Reactor Building
+,Energy-Consumption,Reactor-2,kWh,15,Energy,Reactor Building
+,Energy-Consumption,Distillation-Column-1,kWh,15,Energy,Distillation Unit
+,Energy-Consumption,Distillation-Column-2,kWh,15,Energy,Distillation Unit
+,Energy-Consumption,Pump-1,kWh,15,Energy,Reactor Building
+,Energy-Consumption,Pump-2,kWh,15,Energy,Reactor Building
+,Energy-Consumption,Pump-3,kWh,15,Energy,Distillation Unit
+,Energy-Consumption,Compressor-1,kWh,15,Energy,Reactor Building
+,Energy-Consumption,Compressor-2,kWh,15,Energy,Storage Tanks Area
+,Energy-Consumption,Analyzer-1,kWh,15,Energy,Laboratory
+,Energy-Consumption,Analyzer-2,kWh,15,Energy,Laboratory
+,Energy-Consumption,Safety-Shower-1,kWh,15,Energy,Safety Equipment Room
+,Energy-Consumption,Safety-Shower-2,kWh,15,Energy,Safety Equipment Room
+,Energy-Consumption,Scrubber-1,kWh,15,Energy,Environmental Monitoring
+,Energy-Consumption,Scrubber-2,kWh,15,Energy,Environmental Monitoring
+,Energy-Consumption,Generator-1,kWh,15,Energy,Chemical Plant
+,Energy-Consumption,Generator-2,kWh,15,Energy,Control Room

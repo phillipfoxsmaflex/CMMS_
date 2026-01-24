@@ -1,0 +1,188 @@
+name: mms
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mms_db
+    environment:
+      POSTGRES_DB: mms
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PWD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mms_network
+    restart: unless-stopped
+  
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: mms-backend
+    depends_on:
+      - postgres
+      - minio
+    volumes:
+      - ./logo:/app/static/images
+    environment:
+      DB_URL: postgres:5432/mms
+      DB_USER: ${POSTGRES_USER}
+      DB_PWD: ${POSTGRES_PWD}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
+      PUBLIC_FRONT_URL: ${PUBLIC_FRONT_URL:-http://localhost:12000}
+      frontend.url: ${PUBLIC_FRONT_URL:-http://localhost:12000}
+      FASTSPRING_PWD: ${FASTSPRING_PWD}
+      FASTSPRING_USER: ${FASTSPRING_USER}
+      GCP_BUCKET_NAME: ${GCP_BUCKET_NAME}
+      GCP_JSON: ${GCP_JSON}
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID}
+      MAIL_RECIPIENTS: ${MAIL_RECIPIENTS}
+      SMTP_PWD: ${SMTP_PWD}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_BUCKET: mms-bucket
+      MINIO_ACCESS_KEY: ${MINIO_USER}
+      MINIO_SECRET_KEY: ${MINIO_PASSWORD}
+      STORAGE_TYPE: ${STORAGE_TYPE:-minio} #gpc|minio
+      PUBLIC_MINIO_ENDPOINT: ${PUBLIC_MINIO_ENDPOINT:-http://localhost:9000}
+      INVITATION_VIA_EMAIL: ${INVITATION_VIA_EMAIL:-false}
+      ENABLE_EMAIL_NOTIFICATIONS: ${ENABLE_EMAIL_NOTIFICATIONS:-false}
+      ENABLE_SSO: ${ENABLE_SSO:-false}
+      OAUTH2_PROVIDER: ${OAUTH2_PROVIDER}
+      OAUTH2_CLIENT_ID: ${OAUTH2_CLIENT_ID}
+      OAUTH2_CLIENT_SECRET: ${OAUTH2_CLIENT_SECRET}
+      LICENSE_KEY: ${LICENSE_KEY:-}
+      LICENSE_FINGERPRINT_REQUIRED: ${LICENSE_FINGERPRINT_REQUIRED:-true}
+      ALLOWED_ORGANIZATION_ADMINS: ${ALLOWED_ORGANIZATION_ADMINS:-}
+      LOGO_PATHS: ${LOGO_PATHS}
+      CUSTOM_COLORS: ${CUSTOM_COLORS}
+      BRAND_CONFIG: ${BRAND_CONFIG}
+    ports:
+      - "12001:8080"
+    networks:
+      - mms_network
+    restart: unless-stopped
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mms-frontend
+    environment:
+        API_URL: ${PUBLIC_API_URL}
+        GOOGLE_KEY: ${GOOGLE_KEY:- }
+        GOOGLE_TRACKING_ID: ${GOOGLE_TRACKING_ID:- }
+        MUI_X_LICENSE: ${MUI_X_LICENSE:- }
+        INVITATION_VIA_EMAIL: ${INVITATION_VIA_EMAIL:-false}
+        CLOUD_VERSION: ${CLOUD_VERSION:-false}
+        NODE_ENV: production
+        ENABLE_SSO: ${ENABLE_SSO:-false}
+        OAUTH2_PROVIDER: ${OAUTH2_PROVIDER:- }
+        LOGO_PATHS: ${LOGO_PATHS:- }
+        CUSTOM_COLORS: ${CUSTOM_COLORS:- }
+        BRAND_CONFIG: ${BRAND_CONFIG:- }
+        DEMO_LINK: ${DEMO_LINK:- }
+    ports:
+      - "12000:3000"
+    depends_on:
+      - api
+    networks:
+      - mms_network
+    restart: unless-stopped
+  
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: mms_minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server --address ":9000" --console-address ":9001" /data
+    networks:
+      - mms_network
+    restart: unless-stopped
+  
+  influxdb:
+    image: influxdb:2.8
+    container_name: mms_influxdb
+    environment:
+      # InfluxDB 2.8 Configuration
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USER:-admin}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD:-securepassword}
+      DOCKER_INFLUXDB_INIT_ORG: mms
+      DOCKER_INFLUXDB_INIT_BUCKET: assets
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN:-my-secret-token}
+      INFLUXDB_HTTP_BIND_ADDRESS: ":8086"
+      INFLUXDB_REPORTING_DISABLED: "true"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+    ports:
+      - "8086:8086"  # HTTP API - exposed for external data integration
+    networks:
+      - mms_network
+    restart: unless-stopped
+  
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mms_grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-adminpassword}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+      GF_SERVER_DOMAIN: localhost
+      GF_SERVER_ROOT_URL: "http://localhost:3000/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_INSTALL_PLUGINS: ""
+      # Add database credentials for datasource provisioning
+      INFLUXDB_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PWD: ${POSTGRES_PWD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3001:3000"
+    networks:
+      - mms_network
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+
+  # Reverse Proxy - Nginx
+  proxy:
+    image: nginx:alpine
+    container_name: mms_proxy
+    ports:
+      - "8080:80"  # Frontend
+      - "3002:3001"  # Grafana direct access
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - frontend
+      - grafana
+    networks:
+      - mms_network
+    restart: unless-stopped
+
+networks:
+  mms_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
+  influxdb_data:
+  influxdb_config:
+  grafana_data:

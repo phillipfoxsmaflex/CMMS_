@@ -1,0 +1,277 @@
+{
+  "title": "MMS Asset Health & Reliability",
+  "description": "Technical dashboard for asset performance, reliability metrics, and failure analysis",
+  "tags": [
+    "assets",
+    "reliability",
+    "technical"
+  ],
+  "uid": "mms-asset-health",
+  "version": 1,
+  "timezone": "browser",
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "timepicker": {
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d",
+      "90d"
+    ],
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "refresh": "15m",
+  "schemaVersion": 37,
+  "style": "dark",
+  "panels": [
+    {
+      "title": "Asset Reliability Metrics",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "title": "Asset Availability Timeline",
+      "type": "timeseries",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "WITH time_slots AS ( \n  SELECT generate_series( \n    $__timeFrom(), \n    $__timeTo(), \n    '1 day'::interval \n  ) as slot_start \n), \nasset_availability AS ( \n  SELECT \n    ts.slot_start as time, \n    a.id as asset_id, \n    a.name as asset_name, \n    -- Calculate availability for each day \n    CASE \n      WHEN (EXTRACT(EPOCH FROM (ts.slot_start + '1 day'::interval - ts.slot_start)) / 3600) = 0 THEN 100 \n      ELSE \n        100 - ( \n          (SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (LEAST(ad.starts_on + (ad.duration || ' seconds')::interval, ts.slot_start + '1 day'::interval) - GREATEST(ad.starts_on, ts.slot_start)))), 0) \n           FROM asset_downtime ad \n           WHERE ad.asset_id = a.id \n             AND ad.starts_on < ts.slot_start + '1 day'::interval \n             AND ad.starts_on + (ad.duration || ' seconds')::interval > ts.slot_start \n             AND ad.company_id = a.company_id) \n          / \n          (EXTRACT(EPOCH FROM ('1 day'::interval)) / 3600) \n          * 100 \n        ) \n    END as availability \n  FROM time_slots ts \n  CROSS JOIN asset a \n  WHERE a.archived = false \n) \nSELECT \n  time, \n  asset_name as metric, \n  availability as value \nFROM asset_availability \nWHERE availability IS NOT NULL \nORDER BY time, asset_name",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Failure Rate by Asset",
+      "type": "barchart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  a.name as asset, \n  COUNT(ad.*) as failure_count, \n  COUNT(ad.*) * 1.0 / NULLIF(EXTRACT(EPOCH FROM ($__timeTo() - $__timeFrom())) / 3600 / 24, 0) as failures_per_day \nFROM asset a \nLEFT JOIN asset_downtime ad ON a.id = ad.asset_id \n  AND a.archived = false \n  AND ad.starts_on >= $__timeFrom() \n  AND ad.starts_on <= $__timeTo() \n  AND a.company_id = ad.company_id \nGROUP BY a.name \nORDER BY failures_per_day DESC \nLIMIT 15",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Downtime Analysis",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "title": "Downtime Duration Distribution",
+      "type": "histogram",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dtdurations"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  ad.duration / 3600 as duration_hours, \n  COUNT(*) as count \nFROM asset_downtime ad \nJOIN asset a ON ad.asset_id = a.id \n  AND ad.starts_on >= $__timeFrom() \n  AND ad.starts_on <= $__timeTo() \n  AND ad.company_id = a.company_id \nGROUP BY duration_hours \nORDER BY duration_hours",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Downtime by Reason",
+      "type": "piechart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  'Downtime' as reason, \n  COUNT(*) as count, \n  SUM(ad.duration / 3600) as total_hours \nFROM asset_downtime ad \nJOIN asset a ON ad.asset_id = a.id \n  AND ad.starts_on >= $__timeFrom() \n  AND ad.starts_on <= $__timeTo() \n  AND ad.company_id = a.company_id \nGROUP BY reason \nORDER BY total_hours DESC",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Maintenance History",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      }
+    },
+    {
+      "title": "Work Orders per Asset",
+      "type": "timeseries",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  DATE_TRUNC('week', wo.created_at) as time, \n  a.name as metric, \n  COUNT(wo.*) as work_order_count \nFROM work_order wo \nJOIN asset a ON wo.asset_id = a.id \n  AND wo.created_at >= $__timeFrom() \n  AND wo.created_at <= $__timeTo() \n  AND wo.company_id = a.company_id \nGROUP BY DATE_TRUNC('week', wo.created_at), a.name \nORDER BY time, metric",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Mean Time Between Failures (MTBF) by Asset",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dtdurations"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "WITH failure_events AS ( \n  SELECT \n    ad.asset_id, \n    ad.starts_on as failure_time, \n    LEAD(ad.starts_on) OVER (PARTITION BY ad.asset_id ORDER BY ad.starts_on) as next_failure_time \n  FROM asset_downtime ad \n  JOIN asset a ON ad.asset_id = a.id \n    AND ad.starts_on >= $__timeFrom() \n    AND ad.starts_on <= $__timeTo() \n    AND ad.company_id = a.company_id \n) \nSELECT \n  a.name as asset_name, \n  a.custom_id as asset_id, \n  COUNT(fe.*) as failure_count, \n  AVG(EXTRACT(EPOCH FROM (fe.next_failure_time - fe.failure_time)) / 3600) as mtbf_hours, \n  MIN(EXTRACT(EPOCH FROM (fe.next_failure_time - fe.failure_time)) / 3600) as min_mtbf_hours, \n  MAX(EXTRACT(EPOCH FROM (fe.next_failure_time - fe.failure_time)) / 3600) as max_mtbf_hours \nFROM failure_events fe \nRIGHT JOIN asset a ON fe.asset_id = a.id \n  AND a.archived = false \n  AND a.company_id = fe.company_id \nGROUP BY a.id, a.name, a.custom_id \nORDER BY mtbf_hours ASC \nLIMIT 20",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Asset Details",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      }
+    },
+    {
+      "title": "Asset Information Table",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  a.id as asset_id, \n  a.name as asset_name, \n  a.custom_id as custom_id, \n  ac.name as category, \n  l.name as location, \n  a.manufacturer as manufacturer, \n  a.model as model, \n  a.serial_number as serial_number, \n  a.in_service_date as in_service_date, \n  a.warranty_expiration_date as warranty_expiration, \n  -- Calculate current availability \n  CASE \n    WHEN (EXTRACT(EPOCH FROM ($__timeTo() - $__timeFrom())) / 3600) = 0 THEN 100 \n    ELSE \n      100 - ( \n        (SELECT COALESCE(SUM(ad.duration / 3600), 0) \n         FROM asset_downtime ad \n         WHERE ad.asset_id = a.id \n           AND ad.starts_on >= $__timeFrom() \n           AND ad.starts_on <= $__timeTo() \n           AND ad.company_id = a.company_id) \n        / \n        (EXTRACT(EPOCH FROM ($__timeTo() - $__timeFrom())) / 3600) \n        * 100 \n      ) \n  END as current_availability, \n  -- Calculate total downtime \n  (SELECT COALESCE(SUM(ad.duration / 3600), 0) \n   FROM asset_downtime ad \n   WHERE ad.asset_id = a.id \n     AND ad.starts_on >= $__timeFrom() \n     AND ad.starts_on <= $__timeTo() \n     AND ad.company_id = a.company_id) as total_downtime_hours, \n  -- Calculate failure count \n  (SELECT COUNT(*) \n   FROM asset_downtime ad \n   WHERE ad.asset_id = a.id \n     AND ad.starts_on >= $__timeFrom() \n     AND ad.starts_on <= $__timeTo() \n     AND ad.company_id = a.company_id) as failure_count \nFROM asset a \nLEFT JOIN asset_category ac ON a.category_id = ac.id \nLEFT JOIN location l ON a.location_id = l.id \n  AND a.archived = false \nORDER BY current_availability ASC, failure_count DESC \nLIMIT 50",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

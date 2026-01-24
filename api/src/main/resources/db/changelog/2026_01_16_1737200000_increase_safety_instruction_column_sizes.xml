@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <changeSet author="openhands" id="2026_01_16_1737200000_increase_safety_instruction_column_sizes">
+        <comment>Increase column sizes for safety_instruction table to fix data truncation errors</comment>
+        
+        <modifyDataType tableName="safety_instruction" columnName="title" newDataType="varchar(500)"/>
+        <modifyDataType tableName="safety_instruction" columnName="description" newDataType="varchar(2000)"/>
+        <modifyDataType tableName="safety_instruction" columnName="instruction_material_url" newDataType="varchar(1000)"/>
+        <modifyDataType tableName="safety_instruction" columnName="signature_data" newDataType="varchar(10000)"/>
+        <modifyDataType tableName="safety_instruction" columnName="type" newDataType="varchar(50)"/>
+    </changeSet>
+</databaseChangeLog>

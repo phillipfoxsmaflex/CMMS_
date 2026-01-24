@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="2026_01_21_1737460000_create_new_permission_tables" author="system">
+        <comment>Create new simplified permission tables (editPermissions and deletePermissions)</comment>
+        
+        <!-- Create role_edit_permissions table -->
+        <createTable tableName="role_edit_permissions">
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="edit_permissions" type="INTEGER"/>
+        </createTable>
+        
+        <!-- Create role_delete_permissions table -->
+        <createTable tableName="role_delete_permissions">
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="delete_permissions" type="INTEGER"/>
+        </createTable>
+        
+        <!-- Add foreign key constraints -->
+        <addForeignKeyConstraint 
+            baseTableName="role_edit_permissions"
+            baseColumnNames="role_id"
+            constraintName="fk_role_edit_permissions_role"
+            referencedTableName="role"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+            
+        <addForeignKeyConstraint 
+            baseTableName="role_delete_permissions"
+            baseColumnNames="role_id"
+            constraintName="fk_role_delete_permissions_role"
+            referencedTableName="role"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="2026_01_21_1737460001_migrate_permissions_data" author="system">
+        <comment>Migrate data from old permission tables to new ones</comment>
+        
+        <!-- Migrate editOtherPermissions to editPermissions -->
+        <sql>
+            INSERT INTO role_edit_permissions (role_id, edit_permissions)
+            SELECT role_id, edit_other_permissions 
+            FROM role_edit_other_permissions
+        </sql>
+        
+        <!-- Migrate deleteOtherPermissions to deletePermissions -->
+        <sql>
+            INSERT INTO role_delete_permissions (role_id, delete_permissions)
+            SELECT role_id, delete_other_permissions 
+            FROM role_delete_other_permissions
+        </sql>
+    </changeSet>
+
+    <changeSet id="2026_01_21_1737460002_remove_files_permission" author="system">
+        <comment>Remove deprecated FILES permission entity from all permission tables</comment>
+        
+        <!-- Note: FILES enum value needs to be identified by its ordinal value -->
+        <!-- Based on the old PermissionEntity enum, FILES was at position 10 -->
+        <!-- This will need to be adjusted based on the actual enum ordinal value in your database -->
+        
+        <sql>
+            DELETE FROM role_view_permissions WHERE view_permissions = 10;
+        </sql>
+        
+        <sql>
+            DELETE FROM role_create_permissions WHERE create_permissions = 10;
+        </sql>
+        
+        <sql>
+            DELETE FROM role_edit_permissions WHERE edit_permissions = 10;
+        </sql>
+        
+        <sql>
+            DELETE FROM role_delete_permissions WHERE delete_permissions = 10;
+        </sql>
+        
+        <sql>
+            DELETE FROM role_view_other_permissions WHERE view_other_permissions = 10;
+        </sql>
+        
+        <sql>
+            DELETE FROM role_edit_other_permissions WHERE edit_other_permissions = 10;
+        </sql>
+        
+        <sql>
+            DELETE FROM role_delete_other_permissions WHERE delete_other_permissions = 10;
+        </sql>
+    </changeSet>
+
+    <!-- Note: ASSET_HEALTH permissions will be automatically added to default roles
+         by the Helper.updateDefaultRoles() method at application startup. 
+         No manual database migration needed. -->
+
+</databaseChangeLog>

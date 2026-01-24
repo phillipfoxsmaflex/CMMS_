@@ -1,0 +1,422 @@
+{
+  "title": "MMS Preventive Maintenance Compliance",
+  "description": "Compliance dashboard for preventive maintenance scheduling, adherence, and performance tracking",
+  "tags": [
+    "preventive",
+    "compliance",
+    "maintenance"
+  ],
+  "uid": "mms-preventive-maintenance",
+  "version": 1,
+  "timezone": "browser",
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "timepicker": {
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d",
+      "90d"
+    ],
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "refresh": "1h",
+  "schemaVersion": 37,
+  "style": "dark",
+  "panels": [
+    {
+      "title": "Compliance Overview",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "title": "Overall Compliance Rate",
+      "type": "gauge",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 100,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 85
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  (COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) * 100.0 / \n   NULLIF(COUNT(DISTINCT pm.id), 0)) as compliance_rate \nFROM preventive_maintenance pm \nLEFT JOIN schedule s ON pm.schedule_id = s.id \nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id \nWHERE s.ends_on >= $__timeFrom() \n  AND s.ends_on <= $__timeTo() \n  AND s.disabled = false",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Total PM Tasks",
+      "type": "stat",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  COUNT(DISTINCT pm.id) as total_pm_tasks \nFROM preventive_maintenance pm \nLEFT JOIN schedule s ON pm.schedule_id = s.id \nWHERE s.ends_on >= $__timeFrom() \n  AND s.ends_on <= $__timeTo() \n  AND s.disabled = false",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Completed PM Tasks",
+      "type": "stat",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  COUNT(DISTINCT wo.id) as completed_pm_tasks \nFROM preventive_maintenance pm \nJOIN schedule s ON pm.schedule_id = s.id \nJOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id \nWHERE wo.status = 'COMPLETED' \n  AND s.ends_on >= $__timeFrom() \n  AND s.ends_on <= $__timeTo() \n  AND s.disabled = false",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Overdue PM Tasks",
+      "type": "stat",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  COUNT(DISTINCT pm.id) as overdue_pm_tasks \nFROM preventive_maintenance pm \nJOIN schedule s ON pm.schedule_id = s.id \nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id \nWHERE s.ends_on < NOW() \n  AND (wo.status IS NULL OR wo.status NOT IN ('COMPLETED', 'CANCELLED')) \n  AND s.ends_on >= $__timeFrom() \n  AND s.ends_on <= $__timeTo() \n  AND s.disabled = false",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Upcoming PM Tasks (Next 30 Days)",
+      "type": "stat",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  COUNT(DISTINCT pm.id) as upcoming_pm_tasks \nFROM preventive_maintenance pm \nJOIN schedule s ON pm.schedule_id = s.id \nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id \nWHERE s.ends_on >= NOW() \n  AND s.ends_on <= NOW() + INTERVAL '30 days' \n  AND (wo.status IS NULL OR wo.status NOT IN ('COMPLETED', 'CANCELLED')) \n  AND s.disabled = false",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Compliance Trends",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "title": "PM Compliance Over Time",
+      "type": "timeseries",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  DATE_TRUNC('week', s.ends_on) as time,\n  (COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) * 100.0 / \n   NULLIF(COUNT(DISTINCT pm.id), 0)) as compliance_rate\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id\nWHERE s.ends_on >= $__timeFrom()\n  AND s.ends_on <= $__timeTo()\n  AND s.disabled = false\nGROUP BY DATE_TRUNC('week', s.ends_on)\nORDER BY time",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "PM Tasks by Status",
+      "type": "piechart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  COALESCE(wo.status, 'NOT_STARTED') as status,\n  COUNT(DISTINCT pm.id) as count\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id\nWHERE s.ends_on >= $__timeFrom()\n  AND s.ends_on <= $__timeTo()\n  AND s.disabled = false\nGROUP BY wo.status\nORDER BY count DESC",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Asset-Specific Analysis",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      }
+    },
+    {
+      "title": "PM Compliance by Asset",
+      "type": "barchart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  a.name as asset_name,\n  a.custom_id as asset_id,\n  COUNT(DISTINCT pm.id) as total_tasks,\n  COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) as completed_tasks,\n  (COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) * 100.0 / \n   NULLIF(COUNT(DISTINCT pm.id), 0)) as compliance_rate\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id\nLEFT JOIN asset a ON pm.asset_id = a.id\nWHERE s.ends_on >= $__timeFrom()\n  AND s.ends_on <= $__timeTo()\n  AND s.disabled = false\nGROUP BY a.name, a.custom_id\nORDER BY compliance_rate ASC\nLIMIT 20",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "PM Frequency Analysis",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  s.recurrence_type as frequency,\n  COUNT(DISTINCT pm.id) as task_count,\n  AVG(s.frequency) as avg_days\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nWHERE s.disabled = false\nGROUP BY s.recurrence_type\nORDER BY task_count DESC",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "PM Details",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      }
+    },
+    {
+      "title": "Upcoming Preventive Maintenance Tasks",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  pm.name as pm_name,\n  a.name as asset_name,\n  a.custom_id as asset_id,\n  s.ends_on as due_date,\n  COALESCE(wo.status, 'NOT_STARTED') as status,\n  EXTRACT(EPOCH FROM (s.ends_on - NOW())) / 86400 as days_until_due\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id\nLEFT JOIN asset a ON pm.asset_id = a.id\nWHERE s.ends_on >= NOW()\n  AND s.ends_on <= NOW() + INTERVAL '30 days'\n  AND (wo.status IS NULL OR wo.status NOT IN ('COMPLETED', 'CANCELLED'))\n  AND s.disabled = false\nORDER BY s.ends_on ASC\nLIMIT 50",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

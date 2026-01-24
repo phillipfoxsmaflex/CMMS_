@@ -1,0 +1,89 @@
+import { Box, Grid } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import SettingsLayout from '../SettingsLayout';
+import useAuth from '../../../../hooks/useAuth';
+import { UiConfiguration } from '../../../../models/owns/uiConfiguration';
+import { Formik } from 'formik';
+import { FieldConfigurationsType } from '../../../../contexts/JWTAuthContext';
+import GrayWhiteSelector from '../components/GrayWhiteSelector';
+import { useDispatch } from '../../../../store';
+import Loading from '../../Analytics/Loading';
+
+function UiConfigurationSettings() {
+  const { t }: { t: any } = useTranslation();
+  const dispatch = useDispatch();
+  const {
+    patchUiConfiguration,
+    user: { uiConfiguration }
+  } = useAuth();
+  const fields: { label: string; name: keyof Omit<UiConfiguration, 'id'> }[] = [
+    { label: t('work_orders'), name: 'workOrders' },
+    { label: t('preventive_maintenance'), name: 'preventiveMaintenance' },
+    { label: t('permit_to_work'), name: 'permitToWork' },
+    { label: t('statistics'), name: 'statistics' },
+    { label: t('requests'), name: 'requests' },
+    { label: t('assets'), name: 'assets' },
+    { label: t('asset_monitoring'), name: 'assetMonitoring' },
+    { label: t('location'), name: 'locations' },
+    { label: t('parts_and_inventory'), name: 'partsAndInventory' },
+    { label: t('purchase_orders'), name: 'purchaseOrders' },
+    { label: t('meters'), name: 'meters' },
+    { label: t('people_teams'), name: 'peopleTeams' },
+    { label: t('vendors_customers'), name: 'vendorsAndCustomers' },
+    { label: t('categories'), name: 'categories' },
+    { label: t('files'), name: 'files' },
+    { label: t('settings'), name: 'settings' }
+  ];
+
+  const options: { label: string; value: string }[] = [
+    { label: t('show'), value: true.toString() },
+    { label: t('hide'), value: false.toString() }
+  ];
+
+
+
+  return (
+    <Formik initialValues={{}} onSubmit={() => null}>
+      {({
+        errors,
+        handleBlur,
+        handleChange,
+        handleSubmit,
+        isSubmitting,
+        touched,
+        values
+      }) => (
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Box p={4}>
+                {uiConfiguration ? (
+                  <GrayWhiteSelector
+                    fields={fields}
+                    options={options}
+                    onFieldChange={(
+                      field,
+                      value,
+                      type: FieldConfigurationsType
+                    ) =>
+                      patchUiConfiguration({
+                        ...uiConfiguration,
+                        [field]: value === 'true'
+                      })
+                    }
+                    getValue={(field) => uiConfiguration[field.name]}
+                  />
+                ) : (
+                  <Loading />
+                )}
+              </Box>
+            </Grid>
+
+          </Grid>
+        </form>
+      )}
+    </Formik>
+  );
+}
+
+export default UiConfigurationSettings;

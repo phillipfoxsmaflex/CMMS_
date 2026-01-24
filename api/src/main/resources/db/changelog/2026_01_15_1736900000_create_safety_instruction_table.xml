@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <changeSet author="openhands" id="2026_01_15_1736900000_create_safety_instruction_table">
+        <comment>Create safety_instruction table for safety-related instructions and procedures</comment>
+        
+        <createTable tableName="safety_instruction" remarks="Safety instruction table for storing safety-related procedures and guidelines">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="varchar(1000)"/>
+            <column name="instruction_material_url" type="varchar(500)"/>
+            <column name="signature_data" type="varchar(5000)"/>
+            <column name="type" type="varchar(25)"/>
+            <column name="created_date" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="last_modified_date" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+        </createTable>
+        
+        <!-- Add indexes for better performance -->
+        <createIndex indexName="idx_safety_instruction_type" tableName="safety_instruction">
+            <column name="type"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_safety_instruction_title" tableName="safety_instruction">
+            <column name="title"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

@@ -1,0 +1,253 @@
+{
+  "title": "MMS Location-Based Performance",
+  "description": "Site management dashboard for performance analysis by location hierarchy",
+  "tags": [
+    "locations",
+    "site management",
+    "performance"
+  ],
+  "uid": "mms-location-performance",
+  "version": 1,
+  "timezone": "browser",
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "timepicker": {
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d",
+      "90d"
+    ],
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "refresh": "1h",
+  "schemaVersion": 37,
+  "style": "dark",
+  "panels": [
+    {
+      "title": "Location Performance Overview",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "title": "Location Hierarchy Map",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "WITH RECURSIVE location_hierarchy AS ( \n  SELECT \n    id, \n    name, \n    parent_location_id, \n    name as path, \n    0 as level \n  FROM location \n  WHERE parent_location_id IS NULL \n  UNION ALL \n  SELECT \n    l.id, \n    l.name, \n    l.parent_location_id, \n    lh.path || ' > ' || l.name as path, \n    lh.level + 1 as level \n  FROM location l \n  JOIN location_hierarchy lh ON l.parent_location_id = lh.id \n  ) \nSELECT \n  id as location_id, \n  name as location_name, \n  path as location_path, \n  level as location_level, \n  CASE \n    WHEN level = 0 THEN 'Site' \n    WHEN level = 1 THEN 'Building' \n    WHEN level = 2 THEN 'Floor' \n    WHEN level = 3 THEN 'Room' \n    ELSE 'Other' \n  END as level_name \nFROM location_hierarchy \nWHERE ($location_level = 'all') OR \n      ($location_level = 'site' AND level = 0) OR \n      ($location_level = 'building' AND level = 1) OR \n      ($location_level = 'floor' AND level = 2) OR \n      ($location_level = 'room' AND level = 3) \nORDER BY path",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Location Performance Metrics",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "title": "Asset Availability by Location",
+      "type": "barchart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  l.name as location, \n  AVG( \n    100 - ( \n      (SELECT COALESCE(SUM(ad.duration / 3600), 0) \n       FROM asset_downtime ad \n       JOIN asset a2 ON ad.asset_id = a2.id \n       WHERE a2.location_id = l.id \n         AND ad.starts_on >= $__timeFrom() \n         AND ad.starts_on <= $__timeTo() \n         AND ad.company_id = a2.company_id) \n      / \n      (EXTRACT(EPOCH FROM ($__timeTo() - $__timeFrom())) / 3600) \n      * 100 \n    ) \n  ) as availability_percentage \nFROM location l \nWHERE EXISTS (SELECT 1 FROM asset a WHERE a.location_id = l.id) \nGROUP BY l.name \nORDER BY availability_percentage ASC \nLIMIT 15",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Work Orders by Location",
+      "type": "barchart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  l.name as location, \n  COUNT(wo.*) as work_order_count \nFROM location l \nLEFT JOIN asset a ON l.id = a.location_id \nLEFT JOIN work_order wo ON a.id = wo.asset_id \nWHERE wo.created_at >= $__timeFrom() \n  AND wo.created_at <= $__timeTo() \n  AND wo.company_id = a.company_id \nGROUP BY l.name \nORDER BY work_order_count DESC \nLIMIT 15",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Location Cost Analysis",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      }
+    },
+    {
+      "title": "Maintenance Costs by Location",
+      "type": "barchart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyEUR",
+          "decimals": 2
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  l.name as location, \n  COALESCE(SUM(lab.duration * lab.hourly_rate), 0) + \n  COALESCE(SUM(pc.quantity * p.cost), 0) as total_cost \nFROM location l \nLEFT JOIN asset a ON l.id = a.location_id \nLEFT JOIN work_order wo ON a.id = wo.asset_id \nLEFT JOIN labor lab ON wo.id = lab.work_order_id \nLEFT JOIN part_consumption pc ON wo.id = pc.work_order_id \nLEFT JOIN part p ON pc.part_id = p.id \nWHERE wo.created_at >= $__timeFrom() \n  AND wo.created_at <= $__timeTo() \n  AND wo.company_id = a.company_id \n  AND lab.company_id = wo.company_id \n  AND pc.company_id = wo.company_id \n  AND p.company_id = pc.company_id \nGROUP BY l.name \nORDER BY total_cost DESC \nLIMIT 15",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Downtime by Location",
+      "type": "barchart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dtdurations",
+          "decimals": 2
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  l.name as location, \n  SUM(ad.duration / 3600.0) as total_downtime_hours \nFROM location l \nLEFT JOIN asset a ON l.id = a.location_id \nLEFT JOIN asset_downtime ad ON a.id = ad.asset_id \nWHERE ad.starts_on >= $__timeFrom() \n  AND ad.starts_on <= $__timeTo() \n  AND ad.company_id = a.company_id \nGROUP BY l.name \nORDER BY total_downtime_hours DESC \nLIMIT 15",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Location-Specific Metrics",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      }
+    },
+    {
+      "title": "Location Performance Summary",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  l.id as location_id, \n  l.name as location_name, \n  l.address as address, \n  COUNT(DISTINCT a.id) as asset_count, \n  COUNT(DISTINCT wo.id) as work_order_count, \n  COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) as completed_work_orders, \n  COUNT(CASE WHEN wo.status NOT IN ('COMPLETED', 'CANCELLED') AND wo.due_date < NOW() THEN 1 END) as overdue_work_orders, \n  SUM(ad.duration / 3600.0) as total_downtime_hours, \n  COALESCE(SUM(lab.duration * lab.hourly_rate), 0) + \n  COALESCE(SUM(pc.quantity * p.cost), 0) as total_maintenance_cost, \n  -- Calculate average availability \n  CASE \n    WHEN COUNT(DISTINCT a.id) = 0 THEN 100 \n    ELSE \n      AVG( \n        100 - ( \n          (SELECT COALESCE(SUM(ad2.duration / 3600), 0) \n           FROM asset_downtime ad2 \n           JOIN asset a2 ON ad2.asset_id = a2.id \n           WHERE a2.location_id = l.id \n             AND ad2.starts_on >= $__timeFrom() \n             AND ad2.starts_on <= $__timeTo() \n             AND ad2.company_id = a2.company_id) \n          / \n          (EXTRACT(EPOCH FROM ($__timeTo() - $__timeFrom())) / 3600) \n          * 100 \n        ) \n      ) \n  END as average_availability \nFROM location l \nLEFT JOIN asset a ON l.id = a.location_id \nLEFT JOIN work_order wo ON a.id = wo.asset_id \nLEFT JOIN labor lab ON wo.id = lab.work_order_id \nLEFT JOIN part_consumption pc ON wo.id = pc.work_order_id \nLEFT JOIN part p ON pc.part_id = p.id \nLEFT JOIN asset_downtime ad ON a.id = ad.asset_id \nWHERE wo.created_at >= $__timeFrom() \n  AND wo.created_at <= $__timeTo() \n  AND ad.starts_on >= $__timeFrom() \n  AND ad.starts_on <= $__timeTo() \n  AND wo.company_id = a.company_id \n  AND lab.company_id = wo.company_id \n  AND pc.company_id = wo.company_id \n  AND p.company_id = pc.company_id \n  AND ad.company_id = a.company_id \nGROUP BY l.id, l.name, l.address \nORDER BY total_maintenance_cost DESC, total_downtime_hours DESC \nLIMIT 25",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+ID,Name,Cost,Category,Is a consumable?,Description,Location,Quantity,Barcode
+,1,Reactor Seal Kit,150.00,Process Equipment,Yes,Complete seal kit for CSTR reactors,Maintenance Workshop,10,RSEAL-001
+,2,Distillation Packing,250.00,Process Equipment,Yes,Structured packing for distillation columns,Maintenance Workshop,5,DPACK-001
+,3,Tank Level Sensor,350.00,Instrumentation,No,Industrial level sensor for chemical tanks,Maintenance Workshop,8,TLS-001
+,4,pH Electrode,220.00,Instrumentation,No,Glass pH electrode for process control,Laboratory,6,pHE-001
+,5,Temperature Probe,180.00,Instrumentation,No,Industrial temperature probe,Maintenance Workshop,12,TP-001
+,6,Pressure Transducer,450.00,Instrumentation,No,High-precision pressure transducer,Maintenance Workshop,4,PT-001
+,7,Flow Meter,650.00,Instrumentation,No,Magnetic flow meter for process control,Maintenance Workshop,3,FM-001
+,8,Control Valve,850.00,Process Equipment,No,Industrial control valve assembly,Maintenance Workshop,6,CV-001
+,9,Safety Valve,320.00,Safety Equipment,No,Pressure relief safety valve,Maintenance Workshop,8,SV-001
+,10,Check Valve,120.00,Process Equipment,Yes,Stainless steel check valve,Maintenance Workshop,15,CKV-001
+,11,Pump Seal,85.00,Process Equipment,Yes,Mechanical seal for centrifugal pumps,Maintenance Workshop,20,PS-001
+,12,Gasket Set,45.00,Process Equipment,Yes,Assorted gaskets for chemical equipment,Maintenance Workshop,30,GS-001
+,13,Filter Cartridge,75.00,Process Equipment,Yes,Replacement filter cartridge,Maintenance Workshop,25,FC-001
+,14,Compressor Oil,65.00,Maintenance,Yes,Synthetic compressor oil,Maintenance Workshop,10,CO-001
+,15,Lubricating Grease,35.00,Maintenance,Yes,Chemical-resistant lubricating grease,Maintenance Workshop,15,LG-001
+,16,Safety Goggles,25.00,Safety Equipment,Yes,Chemical-resistant safety goggles,Maintenance Workshop,50,SG-001
+,17,Respirator Cartridge,40.00,Safety Equipment,Yes,Organic vapor respirator cartridge,Maintenance Workshop,30,RC-001
+,18,Nitrile Gloves,12.00,Safety Equipment,Yes,Box of chemical-resistant nitrile gloves,Maintenance Workshop,100,NG-001
+,19,Spill Kit,150.00,Safety Equipment,Yes,Chemical spill response kit,Maintenance Workshop,10,SK-001
+,20,Neutralizing Agent,85.00,Safety Equipment,Yes,Acid/base neutralizing agent,Maintenance Workshop,15,NA-001
