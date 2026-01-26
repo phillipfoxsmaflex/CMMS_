@@ -19,15 +19,11 @@ public class RateLimiterService {
     }
 
     private Bucket newBucket(String key) {
-        // 1 request per minute
-        Bandwidth onePerMinute = Bandwidth.classic(1, Refill.greedy(1, Duration.ofMinutes(1)));
-
-        // 2 requests per 5 hours
-        Bandwidth twoPer5Hours = Bandwidth.classic(2, Refill.greedy(2, Duration.ofHours(5)));
+        // 15 requests per minute
+        Bandwidth fifteenPerMinute = Bandwidth.classic(15, Refill.greedy(15, Duration.ofMinutes(1)));
 
         return Bucket.builder()
-                .addLimit(onePerMinute)
-                .addLimit(twoPer5Hours)
+                .addLimit(fifteenPerMinute)
                 .build();
     }
 }

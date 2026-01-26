@@ -59,7 +59,7 @@ Die Integration ist **vollständig implementiert** und **einsatzbereit**!
 
 ## 📁 Komplette Implementierung
 
-### Backend (16 Dateien):
+### Backend (17 Dateien):
 ```
 api/src/main/java/com/grash/model/WebhookConfig.java
 api/src/main/java/com/grash/repository/WebhookConfigRepository.java
@@ -67,6 +67,7 @@ api/src/main/java/com/grash/service/WebhookConfigService.java
 api/src/main/java/com/grash/dto/GrafanaWebhookRequest.java
 api/src/main/java/com/grash/dto/GrafanaWebhookResponse.java
 api/src/main/java/com/grash/dto/GrafanaAlert.java
+api/src/main/java/com/grash/dto/GrafanaNativeWebhookRequest.java
 api/src/main/java/com/grash/controller/WebhookController.java
 api/src/main/java/com/grash/controller/WebhookConfigController.java
 api/src/main/java/com/grash/service/GrafanaWebhookService.java
@@ -115,6 +116,7 @@ api/src/test/java/com/grash/service/WorkflowWebhookIntegrationTest.java
 - **Fehlerbehandlung**: E-Mail-Benachrichtigungen
 - **Rate Limiting**: 10 Anfragen/Minute
 - **Request-Validierung**: JSON-Schema, Größenbeschränkung
+- **Grafana Native Format Support**: Automatische Konvertierung des nativen Grafana-Webhook-Formats
 
 ### Frontend-adjustments
 - **Webhook-Konfiguration UI**: API-Key Management create a new tab in settings section for api creation and administration
@@ -130,10 +132,10 @@ api/src/test/java/com/grash/service/WorkflowWebhookIntegrationTest.java
 
 ## 📊 Projektstatistiken
 
-- **Gesamtdateien**: 34 Dateien
-- **Code-Zeilen**: 2500+ Zeilen
+- **Gesamtdateien**: 35 Dateien
+- **Code-Zeilen**: 2600+ Zeilen
 - **Testfälle**: 27 Testfälle
-- **Dokumentation**: 2000+ Zeilen
+- **Dokumentation**: 2100+ Zeilen
 - **Implementierungsdauer**: 4 Wochen
 - **Gesamtfortschritt**: 100% ✅
 

@@ -13,6 +13,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -28,6 +31,7 @@ class GrafanaWebhookControllerTest {
     private WebhookController webhookController;
 
     private GrafanaWebhookRequest request;
+    private Map<String, Object> requestMap;
 
     @BeforeEach
     void setUp() {
@@ -37,6 +41,14 @@ class GrafanaWebhookControllerTest {
         request.setStatus("firing");
         request.setSeverity("critical");
         request.setMessage("Test alert message");
+        
+        // Create map version for new controller signature
+        requestMap = new HashMap<>();
+        requestMap.put("alertId", "alert-123");
+        requestMap.put("alertName", "TestAlert");
+        requestMap.put("status", "firing");
+        requestMap.put("severity", "critical");
+        requestMap.put("message", "Test alert message");
     }
 
     @Test
@@ -46,7 +58,7 @@ class GrafanaWebhookControllerTest {
         when(grafanaWebhookService.processWebhook(anyString(), any(GrafanaWebhookRequest.class)))
                 .thenReturn(expectedResponse);
 
-        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("valid-api-key", request);
+        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("valid-api-key", requestMap);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
@@ -60,7 +72,7 @@ class GrafanaWebhookControllerTest {
         when(grafanaWebhookService.processWebhook(anyString(), any(GrafanaWebhookRequest.class)))
                 .thenThrow(new CustomException("Invalid API key", HttpStatus.UNAUTHORIZED));
 
-        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("invalid-api-key", request);
+        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("invalid-api-key", requestMap);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
@@ -69,11 +81,8 @@ class GrafanaWebhookControllerTest {
 
     @Test
     void testHandleGrafanaWebhook_MissingApiKey() {
-        // Mock unauthorized exception for missing API key
-        when(grafanaWebhookService.processWebhook(anyString(), any(GrafanaWebhookRequest.class)))
-                .thenThrow(new CustomException("API key is required", HttpStatus.UNAUTHORIZED));
-
-        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook(null, request);
+        // Test missing API key - validation happens before service call
+        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook(null, requestMap);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
@@ -86,7 +95,7 @@ class GrafanaWebhookControllerTest {
         when(grafanaWebhookService.processWebhook(anyString(), any(GrafanaWebhookRequest.class)))
                 .thenThrow(new CustomException("Rate limit exceeded", HttpStatus.TOO_MANY_REQUESTS));
 
-        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("api-key", request);
+        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("api-key", requestMap);
 
         assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
@@ -99,7 +108,7 @@ class GrafanaWebhookControllerTest {
         when(grafanaWebhookService.processWebhook(anyString(), any(GrafanaWebhookRequest.class)))
                 .thenThrow(new CustomException("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR));
 
-        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("api-key", request);
+        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("api-key", requestMap);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
@@ -112,7 +121,7 @@ class GrafanaWebhookControllerTest {
         when(grafanaWebhookService.processWebhook(anyString(), any(GrafanaWebhookRequest.class)))
                 .thenThrow(new RuntimeException("Unexpected error"));
 
-        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("api-key", request);
+        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("api-key", requestMap);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
@@ -126,7 +135,7 @@ class GrafanaWebhookControllerTest {
         when(grafanaWebhookService.processWebhook(anyString(), any(GrafanaWebhookRequest.class)))
                 .thenReturn(expectedResponse);
 
-        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("valid-api-key", request);
+        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("valid-api-key", requestMap);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
@@ -139,7 +148,7 @@ class GrafanaWebhookControllerTest {
         when(grafanaWebhookService.processWebhook(anyString(), any(GrafanaWebhookRequest.class)))
                 .thenThrow(new CustomException("Webhook is disabled for this company", HttpStatus.FORBIDDEN));
 
-        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("api-key", request);
+        ResponseEntity<GrafanaWebhookResponse> response = webhookController.handleGrafanaWebhook("api-key", requestMap);
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());

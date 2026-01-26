@@ -38,11 +38,7 @@ public class GrafanaAlert {
                 .values(request.getValues())
                 .message(request.getMessage())
                 .customData(request.getCustomData() != null ? 
-                    Map.of(
-                        "workflowId", request.getCustomData().getWorkflowId(),
-                        "priority", request.getCustomData().getPriority(),
-                        "additionalInfo", request.getCustomData().getAdditionalInfo()
-                    ) : Map.of()
+                    request.getCustomData().getAdditionalInfo() : Map.of()
                 )
                 .build();
     }

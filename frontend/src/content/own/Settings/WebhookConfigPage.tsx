@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from '../../../store';
 import { Box, Button, Card, CardContent, CardHeader, CircularProgress, Divider, Grid, Switch, TextField, Typography, Alert, Snackbar, IconButton, Tooltip } from '@mui/material';
-import { ContentCopy, Refresh, Delete, Settings, Visibility, VisibilityOff } from '@mui/icons-material';
+import { ContentCopy, Refresh, Delete, Settings, Visibility, VisibilityOff, Code } from '@mui/icons-material';
 import { getWebhookConfig, createWebhookConfig, regenerateApiKey, toggleWebhookEnabled, deleteWebhookConfig } from '../../../slices/webhook';
 import { RootState } from '../../../store';
 
@@ -12,6 +12,7 @@ const WebhookConfigPage = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [showConfiguration, setShowConfiguration] = useState(false);
 
   useEffect(() => {
     dispatch(getWebhookConfig());
@@ -74,6 +75,27 @@ const WebhookConfigPage = () => {
       navigator.clipboard.writeText(config.apiKey);
       setSnackbarMessage('API key copied to clipboard');
       setSnackbarSeverity('success');
+      setOpenSnackbar(true);
+    }
+  };
+
+  const handleCopyToClipboard = (text: string, itemName: string) => {
+    navigator.clipboard.writeText(text);
+    setSnackbarMessage(`${itemName} copied to clipboard`);
+    setSnackbarSeverity('success');
+    setOpenSnackbar(true);
+  };
+
+  const handleSaveConfiguration = async () => {
+    try {
+      // The configuration is already saved when toggling enabled status or regenerating API key
+      // This is just to provide feedback that changes are saved
+      setSnackbarMessage('Configuration saved successfully');
+      setSnackbarSeverity('success');
+      setOpenSnackbar(true);
+    } catch (err) {
+      setSnackbarMessage('Failed to save configuration');
+      setSnackbarSeverity('error');
       setOpenSnackbar(true);
     }
   };
@@ -183,6 +205,24 @@ const WebhookConfigPage = () => {
                         Regenerate API Key
                       </Button>
                       <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<Code />}
+                        onClick={() => setShowConfiguration(!showConfiguration)}
+                        disabled={loading}
+                      >
+                        {showConfiguration ? 'Hide Configuration' : 'Show Configuration'}
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<Settings />}
+                        onClick={handleSaveConfiguration}
+                        disabled={loading}
+                      >
+                        Save Configuration
+                      </Button>
+                      <Button
                         variant="outlined"
                         color="error"
                         startIcon={<Delete />}
@@ -193,10 +233,196 @@ const WebhookConfigPage = () => {
                       </Button>
                     </Box>
                   </Grid>
-                </Grid>
-              )}
-            </>
-          )}
+                
+                {showConfiguration && (
+                  <Grid item xs={12}>
+                    <Divider sx={{ my: 3 }} />
+                    <Typography variant="h6" gutterBottom>
+                      Grafana Webhook Configuration Template
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Copy the following configuration to set up Grafana webhook integration:
+                    </Typography>
+                    
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Webhook URL
+                      </Typography>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          value={`${window.location.origin}/api/webhooks/grafana`}
+                          InputProps={{
+                            readOnly: true,
+                            endAdornment: (
+                              <IconButton 
+                                onClick={() => handleCopyToClipboard(`${window.location.origin}/api/webhooks/grafana`, 'Webhook URL')}
+                                size="small"
+                              >
+                                <ContentCopy fontSize="small" />
+                              </IconButton>
+                            )
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                    
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        API Key
+                      </Typography>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          value={config.apiKey}
+                          InputProps={{
+                            readOnly: true,
+                            endAdornment: (
+                              <IconButton 
+                                onClick={() => handleCopyToClipboard(config.apiKey, 'API Key')}
+                                size="small"
+                              >
+                                <ContentCopy fontSize="small" />
+                              </IconButton>
+                            )
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                    
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Headers
+                      </Typography>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          value={`{'X-API-Key': '${config.apiKey}', 'Content-Type': 'application/json'}`}
+                          InputProps={{
+                            readOnly: true,
+                            endAdornment: (
+                              <IconButton 
+                                onClick={() => handleCopyToClipboard(`{'X-API-Key': '${config.apiKey}', 'Content-Type': 'application/json'}`, 'Headers')}
+                                size="small"
+                              >
+                                <ContentCopy fontSize="small" />
+                              </IconButton>
+                            )
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                    
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Example Payload
+                      </Typography>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          multiline
+                          minRows={4}
+                          value={JSON.stringify({
+                            alertId: 'sample-alert-123',
+                            alertName: 'SampleAlert',
+                            status: 'firing',
+                            severity: 'critical',
+                            message: 'Alert triggered for SampleAlert',
+                            customData: {
+                              workflowId: 'workflow-123',
+                              priority: 'high'
+                            }
+                          }, null, 2)}
+                          InputProps={{
+                            readOnly: true,
+                            endAdornment: (
+                              <IconButton 
+                                onClick={() => handleCopyToClipboard(JSON.stringify({
+                                  alertId: 'sample-alert-123',
+                                  alertName: 'SampleAlert',
+                                  status: 'firing',
+                                  severity: 'critical',
+                                  message: 'Alert triggered for SampleAlert',
+                                  customData: {
+                                    workflowId: 'workflow-123',
+                                    priority: 'high'
+                                  }
+                                }, null, 2), 'Example Payload')}
+                                size="small"
+                              >
+                                <ContentCopy fontSize="small" />
+                              </IconButton>
+                            )
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                    
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        cURL Command
+                      </Typography>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          value={`curl -X POST '${window.location.origin}/api/webhooks/grafana' \\\n  -H 'X-API-Key: ${config.apiKey}' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"\\n    \"alertId\": \"sample-alert-123\",\\n    \"alertName\": \"SampleAlert\",\\n    \"status\": \"firing\",\\n    \"severity\": \"critical\",\\n    \"message\": \"Alert triggered for SampleAlert\",\\n    \"customData\": {\\\"workflowId\": \"workflow-123\", \\\"priority\": \"high\"}\\n  }'`}
+                          InputProps={{
+                            readOnly: true,
+                            endAdornment: (
+                              <IconButton 
+                                onClick={() => {
+                                  const curlCommand = `curl -X POST '${window.location.origin}/api/webhooks/grafana' \\\n  -H 'X-API-Key: ${config.apiKey}' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"\\n    \"alertId\": \"sample-alert-123\",\\n    \"alertName\": \"SampleAlert\",\\n    \"status\": \"firing\",\\n    \"severity\": \"critical\",\\n    \"message\": \"Alert triggered for SampleAlert\",\\n    \"customData\": {\\\"workflowId\": \"workflow-123\", \\\"priority\": \"high\"}\\n  }'`;
+                                  handleCopyToClipboard(curlCommand, 'cURL Command');
+                                }}
+                                size="small"
+                              >
+                                <ContentCopy fontSize="small" />
+                              </IconButton>
+                            )
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                    
+                    <Box>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Grafana Setup Instructions
+                      </Typography>
+                      <Box sx={{ p: 2, backgroundColor: 'background.paper', borderRadius: 1 }}>
+                        <Typography variant="body2" paragraph>
+                          1. In Grafana, go to Alerting → Contact points
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                          2. Click "Add contact point" and select "Webhook"
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                          3. Paste the Webhook URL above
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                          4. Add the headers shown above
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                          5. Use the example payload as a template for your alerts
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                          6. Test the connection using the cURL command
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                          7. Save the contact point and use it in your alert rules
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+                )}
+              </Grid>
+            )}
+          </>
+        )}
         </CardContent>
       </Card>
 

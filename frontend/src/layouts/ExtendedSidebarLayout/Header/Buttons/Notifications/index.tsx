@@ -155,7 +155,9 @@ function HeaderNotifications() {
     };
     if (user) {
       if (!stompClient) {
-        const socket = new SockJS(`${apiUrl}ws`);
+        // Remove '/api/' from the URL for WebSocket connections
+        const websocketUrl = apiUrl.replace('/api/', '');
+        const socket = new SockJS(`${websocketUrl}ws`);
         const client = Stomp.over(socket);
         client.connect({ token: localStorage.getItem('accessToken') }, function(frame) {
           const subscription = client.subscribe(

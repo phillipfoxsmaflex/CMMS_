@@ -147,6 +147,7 @@ export interface WorkflowCondition {
   purchaseOrderCondition: PurchaseOrderCondition;
   partCondition: PartCondition;
   taskCondition: TaskCondition;
+  webhookCondition: WebhookCondition;
   priority: Priority;
   asset: AssetMiniDTO;
   location: LocationMiniDTO;

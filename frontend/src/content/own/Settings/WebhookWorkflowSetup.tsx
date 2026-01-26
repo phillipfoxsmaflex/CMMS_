@@ -2,35 +2,90 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Button, Card, CardContent, CardHeader, Checkbox, CircularProgress, Divider, FormControl, FormControlLabel, FormGroup, Grid, InputLabel, MenuItem, Select, TextField, Typography, Alert, Snackbar } from '@mui/material';
 import { getWorkflows } from '../../../slices/workflow';
+import { getWebhookConfig } from '../../../slices/webhook';
 import { RootState } from '../../../store';
 import { Workflow } from '../../../models/owns/workflow';
+import { WebhookGrafanaConfig } from '../../../models/owns/webhook';
+
 
 const WebhookWorkflowSetup = () => {
   const dispatch = useDispatch();
   const { workflows } = useSelector((state: RootState) => state.workflows);
+  const { config: webhookConfig } = useSelector((state: RootState) => state.webhook);
   const [workflowsLoading, setWorkflowsLoading] = useState(true);
-  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
-  const [alertName, setAlertName] = useState('');
-  const [severity, setSeverity] = useState<'critical' | 'warning' | 'info'>('critical');
+
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+
+  const [companyId, setCompanyId] = useState('');
+  const [alertName, setAlertName] = useState('');
+  const [severity, setSeverity] = useState<'critical' | 'warning' | 'info'>('critical');
+  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setWorkflowsLoading(true);
       await dispatch(getWorkflows() as any);
+      await dispatch(getWebhookConfig() as any);
       setWorkflowsLoading(false);
     };
     fetchData();
   }, [dispatch]);
 
+  // Get company ID from user context or localStorage
+  useEffect(() => {
+    // This would typically come from the user context
+    // For now, we'll use a mock value or get it from localStorage
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setCompanyId(user.companyId || 'your-company');
+      } catch (e) {
+        setCompanyId('your-company');
+      }
+    } else {
+      setCompanyId('your-company');
+    }
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Hier würde die Workflow-Konfiguration gespeichert werden
-    setSnackbarMessage('Workflow configuration saved successfully');
-    setSnackbarSeverity('success');
-    setOpenSnackbar(true);
+    
+    // Create the webhook configuration for the dialog
+    if (webhookConfig && webhookConfig.apiKey) {
+      const grafanaConfig: WebhookGrafanaConfig = {
+        webhookUrl: `${window.location.origin}/api/webhooks/grafana`,
+        apiKey: webhookConfig.apiKey,
+        headers: {
+          'X-API-Key': webhookConfig.apiKey,
+          'Content-Type': 'application/json'
+        },
+        examplePayload: {
+          alertId: 'sample-alert-123',
+          alertName: alertName,
+          status: 'firing',
+          severity: severity,
+          message: `Alert triggered for ${alertName}`,
+          customData: {
+            workflowId: selectedWorkflow.id.toString(),
+            priority: 'high'
+          }
+        }
+      };
+      
+      // Show success message instead of dialog
+      setSnackbarMessage('Workflow saved successfully');
+      setSnackbarSeverity('success');
+      setOpenSnackbar(true);
+      
+
+    } else {
+      setSnackbarMessage('Webhook configuration not found. Please set up webhook first.');
+      setSnackbarSeverity('error');
+      setOpenSnackbar(true);
+    }
   };
 
   return (
@@ -135,6 +190,8 @@ const WebhookWorkflowSetup = () => {
           )}
         </CardContent>
       </Card>
+
+
 
       <Snackbar
         open={openSnackbar}

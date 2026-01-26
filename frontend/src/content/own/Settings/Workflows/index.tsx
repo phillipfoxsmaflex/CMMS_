@@ -532,6 +532,7 @@ function Workflows() {
         return condition.purchaseOrderCondition;
       if (condition.partCondition) return condition.partCondition;
       if (condition.taskCondition) return condition.taskCondition;
+      if (condition.webhookCondition) return condition.webhookCondition;
     };
     const getTypeFromAction = (action: WorkflowAction): WorkflowActionType => {
       if (action.workOrderAction) return action.workOrderAction;

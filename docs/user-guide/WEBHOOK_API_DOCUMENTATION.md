@@ -18,6 +18,8 @@ Diese Dokumentation beschreibt die technische Implementierung des Grafana Webhoo
 
 ### Request-Format
 
+#### Standard CMMS Format (Recommended)
+
 ```json
 {
   "alertId": "string",
@@ -39,6 +41,52 @@ Diese Dokumentation beschreibt die technische Implementierung des Grafana Webhoo
   }
 }
 ```
+
+#### Grafana Native Format (Fully Supported)
+
+The endpoint fully supports the native Grafana webhook format without requiring any complex mapping or translation:
+
+```json
+{
+  "headers": {
+    "host": "string",
+    "user-agent": "Grafana",
+    "content-length": "number",
+    "content-type": "application/json",
+    "x-api-key": "your-api-key-here",
+    "accept-encoding": "gzip",
+    "connection": "close"
+  },
+  "params": {},
+  "query": {},
+  "body": {
+    "alertId": "string",
+    "alertName": "string",
+    "status": "firing|resolved",
+    "severity": "critical|warning|info",
+    "message": "string (optional)",
+    "customData": {
+      "firingCount": "number (optional)",
+      "resolvedCount": "number (optional)",
+      "receiver": "string (optional)",
+      "externalURL": "string (optional)",
+      "priority": "high|medium|low (optional)",
+      "workflowId": "string (optional)",
+      "any": "additional data (optional)"
+    }
+  },
+  "webhookUrl": "string (optional)",
+  "executionMode": "production|test (optional)"
+}
+```
+
+**Important Notes**:
+- The Grafana native format is **fully supported** and requires **no complex mapping or translation**
+- All required fields (`alertId`, `alertName`, `status`, `severity`) must be present in the `body` object
+- The `customData` from Grafana is automatically mapped to CMMS format:
+  - `priority` and `workflowId` are extracted if present
+  - All other custom data is preserved in `additionalInfo`
+- The `x-api-key` from headers is used for authentication (not the one in the body)
 
 ### Request-Parameter
 
@@ -383,6 +431,63 @@ Authorization: Bearer Ihr_JWT_Token
 - Überwachen Sie Fehlerbenachrichtigungen
 - Testen Sie die Rate-Limiting-Funktionalität
 - Validieren Sie Alert-Payloads vor dem Senden
+
+### 5. Grafana Webhook Troubleshooting
+
+#### Common 400 Error Causes
+
+1. **Missing Required Fields**: Ensure all required fields (`alertId`, `alertName`, `status`, `severity`) are present in the `body` object
+2. **Invalid Format**: The webhook must have the correct structure with `headers`, `params`, `query`, and `body` objects
+3. **Empty Values**: Required fields cannot be empty strings or null
+
+#### Common 401 Error Causes
+
+1. **Missing API Key**: The `X-API-Key` header is required
+2. **Invalid API Key**: The API key doesn't exist or is incorrect
+3. **Disabled Webhook**: The webhook configuration is disabled for the company
+
+#### Common 429 Error Causes
+
+1. **Rate Limit Exceeded**: More than 10 requests per minute per API key
+2. **Solution**: Wait and retry, or request a rate limit increase
+
+#### Testing Your Webhook
+
+Use this cURL command to test your webhook:
+
+```bash
+curl -X POST "http://localhost:5678/webhooks/grafana" \
+  -H "X-API-Key: your-api-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "headers": {
+      "content-type": "application/json",
+      "x-api-key": "your-api-key-here"
+    },
+    "params": {},
+    "query": {},
+    "body": {
+      "alertId": "test-123",
+      "alertName": "TestAlert",
+      "status": "firing",
+      "severity": "critical",
+      "message": "Test alert message",
+      "customData": {
+        "firingCount": 1,
+        "receiver": "test-receiver"
+      }
+    },
+    "webhookUrl": "http://localhost:5678/webhooks/grafana",
+    "executionMode": "test"
+  }'
+```
+
+#### Debugging Tips
+
+1. **Check Server Logs**: Look for detailed error messages
+2. **Validate JSON**: Use a JSON validator to ensure your payload is valid
+3. **Test with Minimal Payload**: Start with just the required fields and add optional ones gradually
+4. **Check API Key**: Verify the API key exists and is enabled in the CMMS system
 
 ## Fehlerbehebung
 
