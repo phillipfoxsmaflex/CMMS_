@@ -1,14 +1,16 @@
 import { alpha, Box, List, ListSubheader, styled } from '@mui/material';
 import { matchPath, useLocation } from 'react-router-dom';
 import SidebarMenuItem from './item';
+import DocumentationMenuItem from './DocumentationMenuItem';
 import menuItems, { MenuItem } from './items';
 import { useTranslation } from 'react-i18next';
 import useAuth from '../../../../hooks/useAuth';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getUrgentWorkOrdersCount } from '../../../../slices/workOrder';
 import { useDispatch, useSelector } from '../../../../store';
 import { getPendingRequestsCount } from '../../../../slices/request';
 import { PermissionEntity } from '../../../../models/owns/role';
+import DocumentationPopup from '../../../../components/DocumentationPopup';
 
 const MenuWrapper = styled(Box)(
   ({ theme }) => `
@@ -154,14 +156,16 @@ const SubMenuWrapper = styled(Box)(
 
 const renderSidebarMenuItems = ({
   items,
-  path
+  path,
+  onDocsClick
 }: {
   items: MenuItem[];
   path: string;
+  onDocsClick?: () => void;
 }): JSX.Element => (
   <SubMenuWrapper>
     <List component="div">
-      {items.reduce((ev, item) => reduceChildRoutes({ ev, item, path }), [])}
+      {items.reduce((ev, item) => reduceChildRoutes({ ev, item, path, onDocsClick }), [])}
     </List>
   </SubMenuWrapper>
 );
@@ -169,11 +173,13 @@ const renderSidebarMenuItems = ({
 const reduceChildRoutes = ({
   ev,
   path,
-  item
+  item,
+  onDocsClick
 }: {
   ev: JSX.Element[];
   path: string;
   item: MenuItem;
+  onDocsClick?: () => void;
 }): Array<JSX.Element> => {
   const key = item.name;
   const exactMatch = item.link
@@ -210,22 +216,38 @@ const reduceChildRoutes = ({
       >
         {renderSidebarMenuItems({
           path,
-          items: item.items
+          items: item.items,
+          onDocsClick
         })}
       </SidebarMenuItem>
     );
   } else {
-    ev.push(
-      <SidebarMenuItem
-        key={key}
-        active={exactMatch}
-        name={item.name}
-        link={item.link}
-        badge={item.badge}
-        badgeTooltip={item.badgeTooltip}
-        icon={item.icon}
-      />
-    );
+    // Special handling for documentation item
+    if (item.name === 'Documentation' && onDocsClick) {
+      ev.push(
+        <DocumentationMenuItem
+          key={key}
+          active={exactMatch}
+          name={item.name}
+          badge={item.badge}
+          badgeTooltip={item.badgeTooltip}
+          icon={item.icon}
+          onClick={onDocsClick}
+        />
+      );
+    } else {
+      ev.push(
+        <SidebarMenuItem
+          key={key}
+          active={exactMatch}
+          name={item.name}
+          link={item.link}
+          badge={item.badge}
+          badgeTooltip={item.badgeTooltip}
+          icon={item.icon}
+        />
+      );
+    }
   }
 
   return ev;
@@ -238,6 +260,15 @@ function SidebarMenu() {
   const { hasViewPermission, hasFeature, user } = useAuth();
   const { urgentCount } = useSelector((state) => state.workOrders);
   const { pendingCount } = useSelector((state) => state.requests);
+  const [docsOpen, setDocsOpen] = useState(false);
+
+  const handleDocsClick = () => {
+    setDocsOpen(true);
+  };
+
+  const handleDocsClose = () => {
+    setDocsOpen(false);
+  };
 
   useEffect(() => {
     if (user.id) {
@@ -291,11 +322,15 @@ function SidebarMenu() {
             >
               {renderSidebarMenuItems({
                 items: section.items,
-                path: location.pathname
+                path: location.pathname,
+                onDocsClick: handleDocsClick
               })}
             </List>
           </MenuWrapper>
         ))}
+    <>
+      <DocumentationPopup open={docsOpen} onClose={handleDocsClose} />
+    </>
     </>
   );
 }

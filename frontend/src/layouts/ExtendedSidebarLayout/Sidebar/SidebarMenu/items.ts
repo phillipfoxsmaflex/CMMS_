@@ -649,8 +649,8 @@ const templateItems = [
       },
       {
         name: 'Documentation',
-        icon: SupportTwoToneIcon,
-        link: '/docs'
+        icon: SupportTwoToneIcon
+        // link removed - handled by DocumentationMenuItem component
       }
     ]
   }

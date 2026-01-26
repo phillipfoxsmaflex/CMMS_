@@ -16,8 +16,9 @@ import useAuth from 'src/hooks/useAuth';
 import UpgradeTwoToneIcon from '@mui/icons-material/UpgradeTwoTone';
 import QuestionMarkTwoToneIcon from '@mui/icons-material/QuestionMarkTwoTone';
 import { isCloudVersion } from '../../../../config';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { CompanySettingsContext } from '../../../../contexts/CompanySettingsContext';
+import DocumentationPopup from '../../../../components/DocumentationPopup';
 
 const LightTooltip = styled(({ className, ...props }: TooltipProps) => (
   <Tooltip {...props} classes={{ popper: className }} />
@@ -40,6 +41,15 @@ function SidebarFooter() {
   const { logout, user } = useAuth();
   const { requestSubscriptionChange } = useContext(CompanySettingsContext);
   const navigate = useNavigate();
+  const [docsOpen, setDocsOpen] = useState(false);
+
+  const handleDocsClick = () => {
+    setDocsOpen(true);
+  };
+
+  const handleDocsClose = () => {
+    setDocsOpen(false);
+  };
 
   const handleLogout = async (): Promise<void> => {
     try {
@@ -51,16 +61,37 @@ function SidebarFooter() {
   };
 
   return (
-    <Box
-      sx={{
-        height: 60
-      }}
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-    >
-      {isCloudVersion && user.ownsCompany && (
-        <LightTooltip placement="top" arrow title={t('upgrade_now')}>
+    <>
+      <Box
+        sx={{
+          height: 60
+        }}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        {isCloudVersion && user.ownsCompany && (
+          <LightTooltip placement="top" arrow title={t('upgrade_now')}>
+            <IconButton
+              sx={{
+                background: `${theme.colors.alpha.trueWhite[10]}`,
+                color: `${theme.colors.alpha.trueWhite[70]}`,
+                transition: `${theme.transitions.create(['all'])}`,
+
+                '&:hover': {
+                  background: `${alpha(theme.colors.alpha.trueWhite[100], 0.2)}`,
+                  color: `${theme.colors.alpha.trueWhite[100]}`
+                }
+              }}
+              // onClick={requestSubscriptionChange}
+              to="/app/subscription/plans"
+              component={RouterLink}
+            >
+              <UpgradeTwoToneIcon fontSize="small" />
+            </IconButton>
+          </LightTooltip>
+        )}
+        <LightTooltip placement="top" arrow title={t('documentation')}>
           <IconButton
             sx={{
               background: `${theme.colors.alpha.trueWhite[10]}`,
@@ -72,67 +103,49 @@ function SidebarFooter() {
                 color: `${theme.colors.alpha.trueWhite[100]}`
               }
             }}
-            // onClick={requestSubscriptionChange}
-            to="/app/subscription/plans"
-            component={RouterLink}
+            onClick={handleDocsClick}
           >
-            <UpgradeTwoToneIcon fontSize="small" />
+            <QuestionMarkTwoToneIcon fontSize="small" />
           </IconButton>
         </LightTooltip>
-      )}
-      <LightTooltip placement="top" arrow title={t('documentation')}>
-        <IconButton
-          sx={{
-            background: `${theme.colors.alpha.trueWhite[10]}`,
-            color: `${theme.colors.alpha.trueWhite[70]}`,
-            transition: `${theme.transitions.create(['all'])}`,
+        <LightTooltip placement="top" arrow title={t('wo_calendar')}>
+          <IconButton
+            sx={{
+              background: `${theme.colors.alpha.trueWhite[10]}`,
+              color: `${theme.colors.alpha.trueWhite[70]}`,
+              transition: `${theme.transitions.create(['all'])}`,
 
-            '&:hover': {
-              background: `${alpha(theme.colors.alpha.trueWhite[100], 0.2)}`,
-              color: `${theme.colors.alpha.trueWhite[100]}`
-            }
-          }}
-          onClick={() => window.open('https://grashjs.github.io/user-guide')}
-        >
-          <QuestionMarkTwoToneIcon fontSize="small" />
-        </IconButton>
-      </LightTooltip>
-      <LightTooltip placement="top" arrow title={t('wo_calendar')}>
-        <IconButton
-          sx={{
-            background: `${theme.colors.alpha.trueWhite[10]}`,
-            color: `${theme.colors.alpha.trueWhite[70]}`,
-            transition: `${theme.transitions.create(['all'])}`,
+              '&:hover': {
+                background: `${alpha(theme.colors.alpha.trueWhite[100], 0.2)}`,
+                color: `${theme.colors.alpha.trueWhite[100]}`
+              }
+            }}
+            to="/app/work-orders?view=calendar"
+            component={RouterLink}
+          >
+            <EventTwoToneIcon fontSize="small" />
+          </IconButton>
+        </LightTooltip>
+        <LightTooltip placement="top" arrow title={t('Logout')}>
+          <IconButton
+            sx={{
+              background: `${theme.colors.alpha.trueWhite[10]}`,
+              color: `${theme.colors.alpha.trueWhite[70]}`,
+              transition: `${theme.transitions.create(['all'])}`,
 
-            '&:hover': {
-              background: `${alpha(theme.colors.alpha.trueWhite[100], 0.2)}`,
-              color: `${theme.colors.alpha.trueWhite[100]}`
-            }
-          }}
-          to="/app/work-orders?view=calendar"
-          component={RouterLink}
-        >
-          <EventTwoToneIcon fontSize="small" />
-        </IconButton>
-      </LightTooltip>
-      <LightTooltip placement="top" arrow title={t('Logout')}>
-        <IconButton
-          sx={{
-            background: `${theme.colors.alpha.trueWhite[10]}`,
-            color: `${theme.colors.alpha.trueWhite[70]}`,
-            transition: `${theme.transitions.create(['all'])}`,
-
-            '&:hover': {
-              background: `${alpha(theme.colors.alpha.trueWhite[100], 0.2)}`,
-              color: `${theme.colors.alpha.trueWhite[100]}`
-            }
-          }}
-          onClick={handleLogout}
-        >
-          <PowerSettingsNewTwoToneIcon fontSize="small" />
-        </IconButton>
-      </LightTooltip>
-    </Box>
+              '&:hover': {
+                background: `${alpha(theme.colors.alpha.trueWhite[100], 0.2)}`,
+                color: `${theme.colors.alpha.trueWhite[100]}`
+              }
+            }}
+            onClick={handleLogout}
+          >
+            <PowerSettingsNewTwoToneIcon fontSize="small" />
+          </IconButton>
+        </LightTooltip>
+      </Box>
+      <DocumentationPopup open={docsOpen} onClose={handleDocsClose} />
+    </>
   );
 }
 
