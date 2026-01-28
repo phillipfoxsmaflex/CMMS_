@@ -1,5 +1,6 @@
 package com.grash.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.grash.model.*;
 import com.grash.model.enums.Priority;
 import lombok.Data;
@@ -12,9 +13,11 @@ import java.util.List;
 @NoArgsConstructor
 public class WorkOrderBasePatchDTO {
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private Date dueDate;
     private Priority priority = Priority.NONE;
     private double estimatedDuration;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private Date estimatedStartDate;
     private String description;
     private String title;

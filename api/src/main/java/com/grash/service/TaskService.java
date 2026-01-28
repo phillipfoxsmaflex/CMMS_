@@ -4,6 +4,7 @@ import com.grash.dto.TaskPatchDTO;
 import com.grash.exception.CustomException;
 import com.grash.mapper.TaskMapper;
 import com.grash.model.Task;
+import com.grash.model.enums.TaskCategory;
 import com.grash.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -56,6 +57,10 @@ public class TaskService {
 
     public List<Task> findByWorkOrder(Long id) {
         return taskRepository.findByWorkOrder_IdOrderByCreatedAtAsc(id);
+    }
+
+    public List<Task> findSafetyTasksByWorkOrder(Long id) {
+        return taskRepository.findByWorkOrder_IdAndCategoryOrderByCreatedAtAsc(id, TaskCategory.SAFETY);
     }
 
     public List<Task> findByPreventiveMaintenance(Long id) {

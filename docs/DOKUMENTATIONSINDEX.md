@@ -97,6 +97,13 @@ docs/
   - Dokumentation
   - Automatisierung
 
+- **[SICHERHEITSMASSNAHMEN.md](modules/SICHERHEITSMASSNAHMEN.md)**
+  - Sicherheitsmaßnahmen-Sektion
+  - Aufgabenverwaltung
+  - Dokumentation
+  - PDF-Integration
+  - API-Schnittstellen
+
 - **[PRAEVENTIVE_WARTUNG.md](modules/PRAEVENTIVE_WARTUNG.md)**
   - Wartungsplanung
   - Compliance-Überwachung

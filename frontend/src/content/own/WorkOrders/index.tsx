@@ -166,6 +166,8 @@ function WorkOrders() {
   );
   const assetParamObject = assetInfos[assetParam]?.asset;
   const tasks = tasksByWorkOrder[currentWorkOrder?.id] ?? [];
+  const safetyTasks = tasks.filter(task => task.category === 'SAFETY');
+  const regularTasks = tasks.filter(task => task.category !== 'SAFETY');
   const [openDrawerFromUrl, setOpenDrawerFromUrl] = useState<boolean>(false);
   const [openDrawerForSingleWO, setOpenDrawerForSingleWO] =
     useState<boolean>(false);
@@ -674,6 +676,13 @@ function WorkOrders() {
       placeholder: t('select_tasks')
     },
     {
+      name: 'safetyTasks',
+      type: 'select',
+      type2: 'task',
+      label: t('safety_measures'),
+      placeholder: t('select_safety_tasks')
+    },
+    {
       name: 'files',
       type: 'file',
       multiple: true,
@@ -760,6 +769,17 @@ function WorkOrders() {
                   await dispatch(uploadDocuments('WORK_ORDER', createdWorkOrder.id, allFilesToUpload));
                 }
                 
+                // Create safety tasks if any
+                if (formattedValues.safetyTasks && formattedValues.safetyTasks.length > 0 && createdWorkOrder?.id) {
+                  const safetyTaskPromises = formattedValues.safetyTasks.map(safetyTask => 
+                    api.patch(`tasks/work-order/${createdWorkOrder.id}`, [{
+                      label: safetyTask.taskBase.label,
+                      taskType: safetyTask.taskBase.taskType
+                    }])
+                  );
+                  await Promise.all(safetyTaskPromises);
+                }
+                
                 onCreationSuccess();
               } catch (err) {
                 onCreationFailure(err);
@@ -831,6 +851,17 @@ function WorkOrders() {
                     })
                   )
                 );
+
+                // Update safety tasks
+                if (formattedValues.safetyTasks && formattedValues.safetyTasks.length > 0) {
+                  const safetyTaskPromises = formattedValues.safetyTasks.map(safetyTask => 
+                    api.patch(`tasks/work-order/${currentWorkOrder.id}`, [{
+                      label: safetyTask.taskBase.label,
+                      taskType: safetyTask.taskBase.taskType
+                    }])
+                  );
+                  await Promise.all(safetyTaskPromises);
+                }
 
                 // Update work order (without files)
                 await dispatch(
@@ -1078,7 +1109,8 @@ function WorkOrders() {
         <WorkOrderDetails
           workOrder={currentWorkOrder}
           onEdit={handleOpenUpdate}
-          tasks={tasks}
+          tasks={regularTasks}
+          safetyTasks={safetyTasks}
           onDelete={handleOpenDelete}
         />
       </Drawer>

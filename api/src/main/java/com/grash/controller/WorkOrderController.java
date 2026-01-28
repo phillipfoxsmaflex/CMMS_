@@ -383,7 +383,15 @@ public class WorkOrderController {
                 Optional<OwnUser> creator = savedWorkOrder.getCreatedBy() == null ? Optional.empty() :
                         userService.findById(savedWorkOrder.getCreatedBy());
                 List<Task> tasks = taskService.findByWorkOrder(id);
+                List<Task> safetyTasks = taskService.findSafetyTasksByWorkOrder(id);
                 Map<Long, String[]> tasksImagesUrls = tasks.stream()
+                        .collect(Collectors.toMap(
+                                Task::getId,
+                                task -> task.getImages().stream()
+                                        .map(image -> storageService.generateSignedUrl(image, 5))
+                                        .toArray(String[]::new)
+                        ));
+                Map<Long, String[]> safetyTasksImagesUrls = safetyTasks.stream()
                         .collect(Collectors.toMap(
                                 Task::getId,
                                 task -> task.getImages().stream()
@@ -409,6 +417,7 @@ public class WorkOrderController {
                             savedWorkOrder.getPrimaryUser().getFullName());
                     put("createdBy", creator.<Object>map(OwnUser::getFullName).orElse(null));
                     put("tasks", tasks);
+                    put("safetyTasks", safetyTasks);
                     put("labors", labors);
                     put("relations", relations);
                     put("additionalCosts", additionalCosts);
@@ -416,6 +425,7 @@ public class WorkOrderController {
                     put("partQuantities", partQuantities);
                     put("environment", environment);
                     put("tasksImagesUrls", tasksImagesUrls);
+                    put("safetyTasksImagesUrls", safetyTasksImagesUrls);
                     put("messageSource", messageSource);
                     put("locale", Helper.getLocale(user));
                     put("backgroundColor", brandingService.getMailBackgroundColor());

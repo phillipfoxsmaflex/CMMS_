@@ -111,6 +111,19 @@ export const getTasksByWorkOrder =
     }
   };
 
+export const getSafetyTasksByWorkOrder =
+  (id: number): AppThunk =>
+  async (dispatch) => {
+    dispatch(slice.actions.setLoadingByTask({ id, loading: true }));
+    try {
+      const tasks = await api.get<Task[]>(`${basePath}/safety/work-order/${id}`);
+      dispatch(slice.actions.getTasksByWorkOrder({ id, tasks }));
+    } catch {
+    } finally {
+      dispatch(slice.actions.setLoadingByTask({ id, loading: false }));
+    }
+  };
+
 export const patchTasksOfWorkOrder =
   (workOrderId: number, taskBases: any[]): AppThunk =>
   async (dispatch) => {

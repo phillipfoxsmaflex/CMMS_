@@ -396,6 +396,9 @@ export const CustomSelect = ({
         </>
       );
     case 'task':
+      const isSafetyTask = field.name === 'safetyTasks';
+      const taskLabel = isSafetyTask ? t('safety_measures') : t('tasks');
+      const taskDescription = isSafetyTask ? t('assign_safety_tasks_description') : t('assign_tasks_description');
       return (
         <>
           <SelectTasksModal
@@ -420,10 +423,10 @@ export const CustomSelect = ({
               <AssignmentTwoToneIcon />
               <Box>
                 <Typography variant="h4" color="primary">
-                  {fieldValue ? fieldValue.length : null} {t('tasks')}
+                  {fieldValue ? fieldValue.length : null} {taskLabel}
                 </Typography>
                 <Typography variant="subtitle1">
-                  {t('assign_tasks_description')}
+                  {taskDescription}
                 </Typography>
               </Box>
               <IconButton>

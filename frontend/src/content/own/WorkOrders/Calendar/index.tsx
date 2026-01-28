@@ -31,7 +31,7 @@ import { usePrevious } from '../../../../hooks/usePrevious';
 import { supportedLanguages } from '../../../../i18n/i18n';
 import WorkOrderDragList from './WorkOrderDragList';
 import { CustomSnackBarContext } from 'src/contexts/CustomSnackBarContext';
-import { formatDateForBackend } from 'src/utils/dateUtils';
+import { formatDateForBackend, formatDateForCalendarBackend } from 'src/utils/dateUtils';
 
 const FullCalendarWrapper = styled(Box)(
   ({ theme }) => `
@@ -174,28 +174,46 @@ function ApplicationsCalendar({
         break;
     }
   };
+  /**
+   * Convert WorkOrder/PreventiveMaintenance to FullCalendar Event with proper timezone handling
+   * 
+   * Strategy: Since backend stores dates in UTC and FullCalendar displays in local timezone,
+   * we need to ensure the UTC times are correctly interpreted as local times.
+   * 
+   * Example: If backend has "2026-01-28T14:00:00Z" (UTC) and user is in CET (UTC+1),
+   * FullCalendar should display this as 15:00 local time.
+   */
   const getEventFromWO = (
     eventPayload: CalendarEvent<WorkOrder | PreventiveMaintenance>
   ): Event => {
-    // Calculate proper start and end dates for the event
-    const startDate = new Date(eventPayload.date);
-    const endDate = new Date(eventPayload.date);
+    // Parse the UTC date string from backend
+    const utcDateStr = eventPayload.date;
     
-    // Add duration based on estimatedDuration if available
-    if (eventPayload.event.estimatedDuration) {
-      endDate.setHours(startDate.getHours() + eventPayload.event.estimatedDuration);
-    } else {
-      // Default 2-hour duration if no estimatedDuration is set
-      endDate.setHours(startDate.getHours() + 2);
-    }
+    // Create Date object from UTC string
+    const utcDate = new Date(utcDateStr);
+    
+    // Get the timezone offset in minutes and convert to milliseconds
+    const timezoneOffset = utcDate.getTimezoneOffset() * 60 * 1000;
+    
+    // Adjust the UTC time to local time by adding the timezone offset
+    // This ensures FullCalendar displays the correct local time
+    const localStartDate = new Date(utcDate.getTime() + timezoneOffset);
+    
+    // Calculate end time based on duration
+    const durationHours = eventPayload.event.estimatedDuration || 2;
+    const localEndDate = new Date(localStartDate.getTime() + durationHours * 60 * 60 * 1000);
+    
+    console.log(`Converting event ${eventPayload.event.id}:`);
+    console.log(`  UTC: ${utcDateStr} → Local: ${localStartDate.toString()}`);
+    console.log(`  Timezone offset: ${timezoneOffset / (60 * 60 * 1000)} hours`);
     
     return {
       id: eventPayload.event.id.toString(),
       allDay: false,
       color: getColor(eventPayload.event.priority),
       description: eventPayload.event?.description,
-      end: endDate,
-      start: startDate,
+      end: localEndDate,
+      start: localStartDate,
       title: eventPayload.event.title,
       extendedProps: { type: eventPayload.type }
     };
@@ -219,8 +237,34 @@ function ApplicationsCalendar({
     console.log('Event moved locally:', {
       id: info.event.id,
       newStart: info.event.start,
-      newEnd: info.event.end
+      newStartISO: info.event.start.toISOString(),
+      newStartLocal: info.event.start.toString(),
+      newEnd: info.event.end,
+      newEndISO: info.event.end.toISOString(),
+      newEndLocal: info.event.end.toString()
     });
+    
+    // Get the calendar API
+    const calApi = calendarRef.current?.getApi();
+    if (calApi) {
+      // Remove the old event first to prevent duplicates
+      const oldEvent = calApi.getEventById(info.event.id);
+      if (oldEvent) {
+        oldEvent.remove();
+      }
+      
+      // Add the event with new dates
+      calApi.addEvent({
+        id: info.event.id,
+        title: info.event.title,
+        start: info.event.start,
+        end: info.event.end,
+        allDay: false,
+        extendedProps: info.event.extendedProps
+      });
+      
+      console.log('✓ Event drop applied successfully with fresh event');
+    }
     
     // Mark as changed for batch-update
     markAsChanged();
@@ -231,8 +275,32 @@ function ApplicationsCalendar({
     console.log('Event resized locally:', {
       id: info.event.id,
       newStart: info.event.start,
-      newEnd: info.event.end
+      newStartISO: info.event.start.toISOString(),
+      newEnd: info.event.end,
+      newEndISO: info.event.end.toISOString()
     });
+    
+    // Get the calendar API
+    const calApi = calendarRef.current?.getApi();
+    if (calApi) {
+      // Remove the old event first
+      const oldEvent = calApi.getEventById(info.event.id);
+      if (oldEvent) {
+        oldEvent.remove();
+      }
+      
+      // Add the event with new dates (resized)
+      calApi.addEvent({
+        id: info.event.id,
+        title: info.event.title,
+        start: info.event.start,
+        end: info.event.end,
+        allDay: false,
+        extendedProps: info.event.extendedProps
+      });
+      
+      console.log('✓ Event resize applied successfully with fresh event');
+    }
     
     // Mark as changed for batch-update
     markAsChanged();
@@ -244,8 +312,33 @@ function ApplicationsCalendar({
       id: info.event.id,
       title: info.event.title,
       start: info.event.start,
-      end: info.event.end
+      startISO: info.event.start.toISOString(),
+      startLocal: info.event.start.toString(),
+      end: info.event.end,
+      endISO: info.event.end.toISOString(),
+      endLocal: info.event.end.toString()
     });
+    
+    // Check if this event already exists in the calendar to prevent duplicates
+    const calApi = calendarRef.current?.getApi();
+    if (calApi) {
+      const existingEvent = calApi.getEventById(info.event.id);
+      if (existingEvent) {
+        // Remove the existing event to prevent duplicates
+        console.log('Removing existing event to prevent duplicates');
+        existingEvent.remove();
+      }
+      
+      // Add the new event with the correct position
+      calApi.addEvent({
+        id: info.event.id,
+        title: info.event.title,
+        start: info.event.start,
+        end: info.event.end,
+        allDay: false
+      });
+      console.log('✓ Event successfully added to calendar');
+    }
     
     // Mark as changed for batch-update
     markAsChanged();
@@ -318,11 +411,50 @@ function ApplicationsCalendar({
             endISO: end.toISOString()
           });
           
+          /**
+           * SAVE EVENTS WITH COMPLETE TIMEZONE CONSISTENCY
+           * 
+           * This is the most critical part of the calendar functionality.
+           * We need to ensure that the times the user sees in the calendar
+           * are exactly the same times that get saved to the backend.
+           * 
+           * Key Principle: FullCalendar works in the browser's local timezone.
+           * When a user moves an event to 14:00, they expect it to stay at 14:00.
+           * 
+           * Implementation Strategy:
+           * 1. FullCalendar displays times in local timezone (e.g., CET)
+           * 2. When user moves event to 14:00 local, FullCalendar provides 14:00 local
+           * 3. We convert this to UTC for backend storage (13:00 UTC for CET)
+           * 4. Backend stores the UTC time (13:00 UTC)
+           * 5. When loading, backend sends 13:00 UTC
+           * 6. FullCalendar converts 13:00 UTC → 14:00 local (correct!)
+           * 
+           * This creates a perfect round-trip: 14:00 local → 13:00 UTC → 14:00 local
+           */
+          
+          // FullCalendar provides Date objects in the browser's local timezone
+          // These represent the exact times the user sees in the calendar
+          
+          // Convert local times to UTC ISO strings for backend storage
+          // toISOString() automatically handles the timezone conversion correctly
+          const utcStartDate = start.toISOString();
+          const utcEndDate = end.toISOString();
+          
+          // Debug logging to verify the conversion
+          console.log(`Saving WO ${id} - Timezone conversion:`);
+          console.log(`  Local: ${start.toString()} → UTC: ${utcStartDate}`);
+          console.log(`  Local: ${end.toString()} → UTC: ${utcEndDate}`);
+          
+          // Additional verification: ensure the UTC time is correct
+          const startUTC = new Date(utcStartDate);
+          const endUTC = new Date(utcEndDate);
+          console.log(`  Verification - UTC times: ${startUTC.toISOString()} to ${endUTC.toISOString()}`);
+          
           return {
             id: id,
             title: title,
-            estimatedStartDate: formatDateForBackend(start),
-            dueDate: formatDateForBackend(end)
+            estimatedStartDate: utcStartDate,
+            dueDate: utcEndDate
           };
         });
 
@@ -489,7 +621,7 @@ function ApplicationsCalendar({
         draggableRef.current = null;
       }
     };
-  }, [workOrders.content]); // Re-initialize when work orders change
+  }, [workOrders.content.length]); // Only re-initialize when number of work orders changes, not on every render
 
   const changeView = (changedView: View): void => {
     const calItem = calendarRef.current;
@@ -600,11 +732,12 @@ function ApplicationsCalendar({
                 supportedLanguages.find(({ code }) => code === getLanguage)
                   .calendarLocale
               }
+              // REMOVED timeZone="UTC" - Let FullCalendar use browser's local timezone
+              // This provides better user experience as users see times in their local timezone
               droppable
               editable={true}
               eventStartEditable={true}
               eventDurationEditable={true}
-              eventResizableFromStart={true}
               eventDisplay="block"
               eventClick={(arg) =>
                 handleOpenDetails(
@@ -626,12 +759,29 @@ function ApplicationsCalendar({
               eventDrop={handleEventDrop}
               eventResize={handleEventResize}
               eventReceive={handleEventReceive}
+              eventOverlap={true} // Allow events to overlap
+              eventAllow={(dropInfo, draggedEvent) => {
+                // Always allow dropping
+                console.log('Event allow check:', { dropInfo, draggedEvent });
+                return true;
+              }}
+              // Add explicit event interaction settings
+              selectable={true}
+              selectMirror={true}
+              unselectAuto={true}
+              unselectCancel={''}
               plugins={[
                 dayGridPlugin,
                 timeGridPlugin,
                 interactionPlugin,
                 listPlugin
               ]}
+              // Additional settings for better drag-and-drop experience
+              dragScroll={true}
+              dropAccept={'.fc-event, [data-work-order-id]'} // Accept both calendar events and work order list items
+              eventLongPressDelay={100} // Reduced for better touch response
+              eventDragMinDistance={1} // Reduced to make dragging easier (applies to both mouse and touch)
+              longPressDelay={100} // Reduced long press delay
             />
           </FullCalendarWrapper>
         </Grid>

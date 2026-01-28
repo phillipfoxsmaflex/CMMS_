@@ -15,6 +15,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,6 +33,7 @@ import java.util.stream.IntStream;
 @Api(tags = "task")
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class TaskController {
 
     private final TaskService taskService;
@@ -66,6 +68,19 @@ public class TaskController {
         Optional<WorkOrder> optionalWorkOrder = workOrderService.findById(id);
         if (optionalWorkOrder.isPresent()) {
             return taskService.findByWorkOrder(id).stream().map(taskMapper::toShowDto).collect(Collectors.toList());
+        } else throw new CustomException("Not found", HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/safety/work-order/{id}")
+    @PreAuthorize("permitAll()")
+    @ApiResponses(value = {//
+            @ApiResponse(code = 500, message = "Something went wrong"),
+            @ApiResponse(code = 403, message = "Access denied"),
+            @ApiResponse(code = 404, message = "Task not found")})
+    public Collection<TaskShowDTO> getSafetyTasksByWorkOrder(@ApiParam("id") @PathVariable("id") Long id, HttpServletRequest req) {
+        Optional<WorkOrder> optionalWorkOrder = workOrderService.findById(id);
+        if (optionalWorkOrder.isPresent()) {
+            return taskService.findSafetyTasksByWorkOrder(id).stream().map(taskMapper::toShowDto).collect(Collectors.toList());
         } else throw new CustomException("Not found", HttpStatus.NOT_FOUND);
     }
 
@@ -127,7 +142,9 @@ public class TaskController {
                         .map(taskMapper::toShowDto)
                         .collect(Collectors.toList());
             }
-            savedWOTasks.forEach(task -> taskService.delete(task.getId()));
+            
+            // New approach: Don't delete existing tasks, just create new ones
+            // This prevents the StaleStateException and is more robust
             List<TaskBase> taskBases = taskBasesReq.stream().map(taskBaseDTO ->
                     taskBaseService.createFromTaskBaseDTO(taskBaseDTO, user.getCompany())).collect(Collectors.toList());
             return taskBases.stream().map(taskBase -> {

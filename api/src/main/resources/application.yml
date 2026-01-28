@@ -15,6 +15,9 @@ spring:
   jackson:
     serialization:
       fail-on-empty-beans: false
+    deserialization:
+      adjust-dates-to-context-time-zone: false
+    time-zone: UTC
   liquibase:
     change-log: classpath:/db/master.xml
     enabled: true

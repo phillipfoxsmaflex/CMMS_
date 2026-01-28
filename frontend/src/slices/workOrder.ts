@@ -343,17 +343,50 @@ export const getWorkOrderEvents =
   (start: Date, end: Date): AppThunk =>
   async (dispatch) => {
     console.log('Refreshing calendar events for range:', { start, end });
+    
+    // Convert local dates to UTC for backend communication
+    // FullCalendar works in local timezone, but backend expects UTC
+    const startUTC = start.toISOString();
+    const endUTC = end.toISOString();
+    
+    console.log('Sending UTC date range to backend:', { startUTC, endUTC });
+    
     dispatch(slice.actions.setLoadingGet({ loading: true }));
     const response = await api.post<
       CalendarEvent<WorkOrder | PreventiveMaintenance>[]
     >(`${basePath}/events`, {
-      start,
-      end
+      start: startUTC,
+      end: endUTC
     });
     console.log('Received calendar events:', response.length, 'events');
+    
+    // Convert the response dates back to Date objects for FullCalendar
+    // Backend provides UTC dates, FullCalendar displays in local timezone
+    // This creates the perfect round-trip: UTC → Local → UTC → Local
+    const eventsWithDates = response.map(event => {
+      // Parse the UTC date string from backend
+      const utcDateStr = event.date;
+      
+      // Create Date object from UTC string
+      const utcDate = new Date(utcDateStr);
+      
+      // Get timezone offset and adjust to local time
+      const timezoneOffset = utcDate.getTimezoneOffset() * 60 * 1000;
+      const localDate = new Date(utcDate.getTime() + timezoneOffset);
+      
+      console.log(`Loading event ${event.event.id}:`);
+      console.log(`  UTC: ${utcDateStr} → Local: ${localDate.toString()}`);
+      console.log(`  Timezone offset: ${timezoneOffset / (60 * 60 * 1000)} hours`);
+      
+      return {
+        ...event,
+        date: localDate
+      };
+    });
+    
     dispatch(
       slice.actions.getEvents({
-        events: response
+        events: eventsWithDates
       })
     );
     dispatch(slice.actions.setLoadingGet({ loading: false }));

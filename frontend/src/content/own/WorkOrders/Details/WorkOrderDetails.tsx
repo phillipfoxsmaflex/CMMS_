@@ -37,6 +37,7 @@ import DeleteTwoToneIcon from '@mui/icons-material/DeleteTwoTone';
 import AddTimeModal from './AddTimeModal';
 import AddCostModal from './AddCostModal';
 import Tasks from './Tasks';
+import SafetyTasks from './SafetyTasks';
 import LinkTwoToneIcon from '@mui/icons-material/LinkTwoTone';
 import ArchiveTwoToneIcon from '@mui/icons-material/ArchiveTwoTone';
 import PictureAsPdfTwoToneIcon from '@mui/icons-material/PictureAsPdfTwoTone';
@@ -112,10 +113,11 @@ interface WorkOrderDetailsProps {
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
   tasks: Task[];
+  safetyTasks: Task[];
 }
 
 export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
-  const { workOrder, onEdit, tasks, onDelete } = props;
+  const { workOrder, onEdit, tasks, safetyTasks, onDelete } = props;
   const theme = useTheme();
   const { showSnackBar } = useContext(CustomSnackBarContext);
   const { getFormattedDate, getUserNameById, getFormattedCurrency } =
@@ -913,6 +915,19 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
                 <Divider sx={{ mt: 2 }} />
                 <Tasks
                   tasksProps={tasks}
+                  workOrderId={workOrder?.id}
+                  handleZoomImage={setImageState}
+                  disabled={
+                    !hasEditPermission(PermissionEntity.WORK_ORDERS, workOrder)
+                  }
+                />
+              </Box>
+            )}
+            {!!safetyTasks.length && (
+              <Box>
+                <Divider sx={{ mt: 2 }} />
+                <SafetyTasks
+                  safetyTasksProps={safetyTasks}
                   workOrderId={workOrder?.id}
                   handleZoomImage={setImageState}
                   disabled={

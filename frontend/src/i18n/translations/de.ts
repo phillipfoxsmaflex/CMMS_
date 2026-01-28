@@ -446,6 +446,7 @@ const deJSON = {
   select_location: 'Standort auswählen',
   select_asset: 'Anlage auswählen',
   select_tasks: 'Aufgaben auswählen',
+  select_safety_tasks: 'Sicherheitsmaßnahmen auswählen',
   requires_signature: 'Erfordert Unterschrift',
   required_wo_title: 'Arbeitsauftrags-Titel ist erforderlich',
   add_wo: 'Arbeitsauftrag hinzufügen',
@@ -1118,6 +1119,9 @@ const deJSON = {
   save_checklist: 'Checkliste speichern',
   assign_tasks_description:
     'Benutzerdefinierte Aufgaben für Techniker zuweisen, um sie auszufüllen',
+  assign_safety_tasks_description:
+    'Benutzerdefinierte Sicherheitsmaßnahmen zuweisen',
+  safety_measures: 'Sicherheitsmaßnahmen',
   select_date: 'Datum auswählen',
   task: 'Aufgabe',
   checklist: 'Checkliste',

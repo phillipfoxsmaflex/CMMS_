@@ -3,6 +3,7 @@ package com.grash.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.grash.model.abstracts.CompanyAudit;
+import com.grash.model.enums.TaskCategory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +13,7 @@ import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.context.MessageSource;
 
 import javax.persistence.Entity;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
@@ -20,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+
+import static javax.persistence.EnumType.STRING;
 
 @Entity
 @Data
@@ -34,6 +38,9 @@ public class Task extends CompanyAudit {
     private String notes;
 
     private String value;
+
+    @Enumerated(STRING)
+    private TaskCategory category = TaskCategory.REGULAR;
 
     @OneToMany(mappedBy = "task", fetch = FetchType.LAZY)
     private List<File> images = new ArrayList<>();
@@ -53,6 +60,15 @@ public class Task extends CompanyAudit {
         this.workOrder = workOrder;
         this.value = value;
         this.preventiveMaintenance = preventiveMaintenance;
+        this.category = TaskCategory.REGULAR;
+    }
+
+    public Task(TaskBase taskBase, WorkOrder workOrder, PreventiveMaintenance preventiveMaintenance, String value, TaskCategory category) {
+        this.taskBase = taskBase;
+        this.workOrder = workOrder;
+        this.value = value;
+        this.preventiveMaintenance = preventiveMaintenance;
+        this.category = category;
     }
 
     @JsonIgnore

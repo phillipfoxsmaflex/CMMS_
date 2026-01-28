@@ -24,12 +24,15 @@ export interface TaskBase {
   asset?: AssetMiniDTO;
   meter?: MeterMiniDTO;
 }
+export type TaskCategory = 'REGULAR' | 'SAFETY';
+
 export interface Task {
   id: number;
   value?: string | number;
   notes: string;
   taskBase: TaskBase;
   images: File[];
+  category?: TaskCategory;
 }
 export const tasks: Task[] = [
   {
