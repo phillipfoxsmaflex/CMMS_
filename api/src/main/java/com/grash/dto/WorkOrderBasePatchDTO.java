@@ -13,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 public class WorkOrderBasePatchDTO {
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", timezone = "UTC")
     private Date dueDate;
     private Priority priority = Priority.NONE;
     private double estimatedDuration;

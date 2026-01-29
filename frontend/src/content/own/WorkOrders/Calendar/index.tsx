@@ -207,6 +207,37 @@ function ApplicationsCalendar({
     console.log(`  UTC: ${utcDateStr} → Local: ${localStartDate.toString()}`);
     console.log(`  Timezone offset: ${timezoneOffset / (60 * 60 * 1000)} hours`);
     
+    // Build enhanced title with asset and worker information
+    let eventTitle = eventPayload.event.title;
+    
+    // Add asset information if available
+    if (eventPayload.event.asset && eventPayload.event.asset.name) {
+      eventTitle += ` | ${eventPayload.event.asset.name}`;
+      if (eventPayload.event.asset.customId) {
+        eventTitle += ` (${eventPayload.event.asset.customId})`;
+      }
+    }
+    
+    // Add primary worker information if available
+    if (eventPayload.event.primaryUser) {
+      const primaryWorkerName = `${eventPayload.event.primaryUser.firstName} ${eventPayload.event.primaryUser.lastName}`;
+      eventTitle += ` | 👤 ${primaryWorkerName}`;
+    }
+    
+    // Add additional workers if available
+    if (eventPayload.event.assignedTo && eventPayload.event.assignedTo.length > 0) {
+      const additionalWorkers = eventPayload.event.assignedTo
+        .map(user => `${user.firstName} ${user.lastName}`)
+        .join(', ');
+      eventTitle += ` | 👥 ${additionalWorkers}`;
+    }
+    
+    // Add contractor if available
+    if (eventPayload.event.assignedToEmployee) {
+      const contractorName = `${eventPayload.event.assignedToEmployee.firstName} ${eventPayload.event.assignedToEmployee.lastName}`;
+      eventTitle += ` | 🔧 ${contractorName}`;
+    }
+    
     return {
       id: eventPayload.event.id.toString(),
       allDay: false,
@@ -214,7 +245,7 @@ function ApplicationsCalendar({
       description: eventPayload.event?.description,
       end: localEndDate,
       start: localStartDate,
-      title: eventPayload.event.title,
+      title: eventTitle,
       extendedProps: { type: eventPayload.type }
     };
   };
@@ -306,6 +337,43 @@ function ApplicationsCalendar({
     markAsChanged();
   };
 
+  /**
+   * Build enhanced event title with work order details (asset, workers, contractors)
+   */
+  const buildEnhancedEventTitle = (workOrder: WorkOrder | PreventiveMaintenance): string => {
+    let eventTitle = workOrder.title;
+
+    // Add asset information if available
+    if (workOrder.asset && workOrder.asset.name) {
+      eventTitle += ` | ${workOrder.asset.name}`;
+      if (workOrder.asset.customId) {
+        eventTitle += ` (${workOrder.asset.customId})`;
+      }
+    }
+
+    // Add primary worker information if available
+    if (workOrder.primaryUser) {
+      const primaryWorkerName = `${workOrder.primaryUser.firstName} ${workOrder.primaryUser.lastName}`;
+      eventTitle += ` | 👤 ${primaryWorkerName}`;
+    }
+
+    // Add additional workers if available
+    if (workOrder.assignedTo && workOrder.assignedTo.length > 0) {
+      const additionalWorkers = workOrder.assignedTo
+        .map(user => `${user.firstName} ${user.lastName}`)
+        .join(', ');
+      eventTitle += ` | 👥 ${additionalWorkers}`;
+    }
+
+    // Add contractor if available
+    if (workOrder.assignedToEmployee) {
+      const contractorName = `${workOrder.assignedToEmployee.firstName} ${workOrder.assignedToEmployee.lastName}`;
+      eventTitle += ` | 🔧 ${contractorName}`;
+    }
+
+    return eventTitle;
+  };
+
   const handleEventReceive = (info: any) => {
     // Work order was dragged from list into calendar - keep it local
     console.log('Work order received locally:', {
@@ -319,6 +387,18 @@ function ApplicationsCalendar({
       endLocal: info.event.end.toString()
     });
     
+
+    // Find the full work order data to enrich the event title
+    const workOrderId = parseInt(info.event.id);
+    const workOrder = workOrders.content.find(wo => wo.id === workOrderId);
+
+    let enhancedTitle = info.event.title;
+    if (workOrder) {
+      enhancedTitle = buildEnhancedEventTitle(workOrder);
+      console.log('Enhanced event title with work order details:', enhancedTitle);
+    } else {
+      console.warn('Work order not found in state for ID:', workOrderId);
+    }
     // Check if this event already exists in the calendar to prevent duplicates
     const calApi = calendarRef.current?.getApi();
     if (calApi) {
@@ -329,15 +409,15 @@ function ApplicationsCalendar({
         existingEvent.remove();
       }
       
-      // Add the new event with the correct position
+      // Add the new event with the correct position and enhanced title
       calApi.addEvent({
         id: info.event.id,
-        title: info.event.title,
+        title: enhancedTitle,
         start: info.event.start,
         end: info.event.end,
         allDay: false
       });
-      console.log('✓ Event successfully added to calendar');
+      console.log('✓ Event successfully added to calendar with enhanced title');
     }
     
     // Mark as changed for batch-update
