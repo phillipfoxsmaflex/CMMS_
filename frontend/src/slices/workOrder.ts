@@ -12,7 +12,7 @@ import {
 import PreventiveMaintenance from 'src/models/owns/preventiveMaintenance';
 import { revertAll } from 'src/utils/redux';
 import File from '../models/owns/file';
-import { formatDateOfBirthForBackend } from 'src/utils/dateUtils';
+import { formatDateForBackend, formatDateOfBirthForBackend } from 'src/utils/dateUtils';
 import { patchTasksOfWorkOrder as patchTasksOfWorkOrderAction } from './task';
 
 const basePath = 'work-orders';

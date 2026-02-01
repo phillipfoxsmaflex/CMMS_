@@ -519,9 +519,9 @@ public class WorkOrderController {
      */
     private String sanitizeCssForPdf(String html) {
         // Remove @keyframes and @-webkit-keyframes rules
-        html = html.replaceAll("(?i)@(-webkit-)?keyframes[^{]*\{[^}]*\}", "");
+        html = html.replaceAll("(?i)@(-webkit-)?keyframes[^{]*\\{[^}]*\\}", "");
         // Remove @-ms-viewport rules
-        html = html.replaceAll("(?i)@-ms-viewport[^{]*\{[^}]*\}", "");
+        html = html.replaceAll("(?i)@-ms-viewport[^{]*\\{[^}]*\\}", "");
         // Remove unsupported pseudo-selectors like :-ms-input-placeholder
         html = html.replaceAll("(?i):-ms-input-placeholder", "");
         // Remove other problematic pseudo-selectors

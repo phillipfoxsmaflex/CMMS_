@@ -73,3 +73,15 @@ export const formatDateForDisplay = (date: Date): string => {
   
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 };
+
+/**
+ * Formats a date of birth for backend storage.
+ * This function is specifically designed for date of birth fields
+ * and ensures consistent formatting for backend compatibility.
+ * 
+ * @param date - The date of birth to format
+ * @returns ISO-formatted string in UTC with 'Z' suffix
+ */
+export const formatDateOfBirthForBackend = (date: Date): string => {
+  return date.toISOString();
+};

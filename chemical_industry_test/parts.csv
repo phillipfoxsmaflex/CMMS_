@@ -1,0 +1,7 @@
+ID,Name,Cost,Category,Non Stock,Barcode,Description,Quantity,Additional Information,Area,Minimum Quantity,Assigned To,Contractors,Vendors,Teams
+,Gasket Set,25,Mechanical Parts,No,GASKET-001,High-temperature gaskets for reactor seals,50,Suitable for chemical reactors, Max temp: 250°C,Storage Room A,10,maintenance1@chemicalplant.com,,ChemicalSupply Inc,Maintenance Team
+,PTFE Seals,15,Sealing Materials,No,PTFE-001,PTFE seals for chemical-resistant applications,30,Chemical resistant, Max pressure: 20 bar,Storage Room B,5,maintenance2@chemicalplant.com,,SealTech GmbH,Maintenance Team
+,Pressure Sensor,120,Instrumentation,No,SENSOR-001,Digital pressure sensor for process control,12,Range: 0-25 bar, Accuracy: ±0.5%,Storage Room C,3,instrumentation1@chemicalplant.com,,ProcessControl Ltd,Instrumentation Team
+,Temperature Probe,85,Instrumentation,No,TEMP-001,Industrial temperature probe with digital output,8,Range: -50°C to 250°C, Accuracy: ±1°C,Storage Room C,2,instrumentation2@chemicalplant.com,,TempSensors AG,Instrumentation Team
+,Safety Valve,250,Safety Equipment,No,VALVE-001,Emergency pressure relief valve,6,Set pressure: 12 bar, Material: Stainless Steel,Storage Room D,2,safety1@chemicalplant.com,,SafetySystems GmbH,Safety Team
+,Chemical Pumps,450,Pumps,No,PUMP-001,Centrifugal pump for chemical transfer,4,Flow rate: 500 L/min, Max pressure: 10 bar,Storage Room E,1,process1@chemicalplant.com,,PumpTech Inc,Process Team

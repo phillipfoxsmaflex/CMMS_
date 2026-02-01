@@ -1,0 +1,7 @@
+ID,Name,Address,Parent Location,Assigned To,Teams,Vendors,Contractors
+,Main Chemical Plant,Industrial Zone 1, Chemical Park, Main Street 123, 45678 Chemical City,Germany,,,,
+,Production Building A,Main Chemical Plant,Production Zone A, 1st Floor,,,,,
+,Production Building B,Main Chemical Plant,Production Zone B, 2nd Floor,,,,,
+,Storage Facility,Main Chemical Plant,Storage Area 1, Warehouse Road 5,,,,,
+,Lab Building,Main Chemical Plant,Research Lab 1, Science Avenue 7,,,,,
+,Utility Area,Main Chemical Plant,Utility Zone, Power Street 9,,,,,
