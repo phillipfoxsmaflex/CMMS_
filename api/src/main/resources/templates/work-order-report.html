@@ -32,7 +32,7 @@
             <div class="invoice-title">
                 <h3 th:text="${companyName}"></h3>
                 <h3 th:class="pull-right" th:style="'color:'+${backgroundColor}"
-                    th:text="#{wo_number(${workOrder.customId})}"></h3>
+                    th:text="'WO#: ' + ${workOrder.customId}"></h3>
             </div>
             <hr>
             <div class="row">
@@ -65,14 +65,14 @@
                         <div th:if="${workOrder.status}">
                             <strong th:text="#{status}+': '"> </strong>
                             <span
-                                    th:text="#{${workOrder.status}}">
+                                    th:text="${workOrder.status}">
                             </span>
                             <br>
                         </div>
                         <div th:if="${workOrder.priority}">
                             <strong th:text="#{priority}+': '"> </strong>
                             <span
-                                    th:text="#{${workOrder.priority}}">
+                                    th:text="${workOrder.priority}">
                             </span>
                             <br>
                         </div>
@@ -230,7 +230,7 @@
                         </div>
                         <div>
                             <strong th:text="#{duration}+': '"> </strong> <span
-                                th:text="#{format_date(${labor.getFormattedDuration().get(0)},${labor.getFormattedDuration().get(1)},${labor.getFormattedDuration().get(2)})}"></span>
+                                th:text="${labor.getFormattedDuration().get(0)} + 'd ' + ${labor.getFormattedDuration().get(1)} + 'h ' + ${labor.getFormattedDuration().get(2)} + 'm'"></span>
                         </div>
                         <div>
                             <strong th:text="#{cost}+': '"></strong> <span
@@ -250,7 +250,7 @@
                 </div>
                 <div class="panel-body">
                     <th:block th:each="relation : ${relations}">
-                        <div th:text="${relation.getParent().getTitle()} + ' '+#{${relation.getRelationType()}} + ' '+ ${relation.getChild().getTitle()}"></div>
+                        <div th:text="${relation.getParent().getTitle()} + ' '+ ${relation.getRelationType()} + ' '+ ${relation.getChild().getTitle()}"></div>
                     </th:block>
                 </div>
             </div>
@@ -323,12 +323,6 @@
     </div>
     <br>
     <hr>
-    <div style="display: flex; align-items: center; justify-content: center;">
-        <span th:text="#{this_wo_created}" style="margin-right: 20px;"></span>
-        <img th:src="@{${#strings.isEmpty(environment.getProperty('white-labeling.logo-paths')) ?
-    environment.getProperty('api.host') + '/images/logo.png' :
-    environment.getProperty('api.host') + '/images/custom-logo.png'}}" width="75" height="75"/>
-    </div>
 </div>
 </body>
 </html>

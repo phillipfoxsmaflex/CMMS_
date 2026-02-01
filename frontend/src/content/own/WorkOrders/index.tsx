@@ -68,7 +68,7 @@ import api from '../../../utils/api';
 import { CustomSnackBarContext } from '../../../contexts/CustomSnackBarContext';
 import { useDispatch, useSelector } from '../../../store';
 import PriorityWrapper from '../components/PriorityWrapper';
-import { patchTasksOfWorkOrder } from '../../../slices/task';
+import { patchTasksOfWorkOrder, getSafetyTasksByWorkOrder } from '../../../slices/task';
 import { CompanySettingsContext } from '../../../contexts/CompanySettingsContext';
 import useAuth from '../../../hooks/useAuth';
 import { getWOBaseValues } from '../../../utils/woBase';
@@ -774,10 +774,16 @@ function WorkOrders() {
                   const safetyTaskPromises = formattedValues.safetyTasks.map(safetyTask => 
                     api.patch(`tasks/work-order/${createdWorkOrder.id}`, [{
                       label: safetyTask.taskBase.label,
-                      taskType: safetyTask.taskBase.taskType
+                      taskType: safetyTask.taskBase.taskType,
+                      category: 'SAFETY'
                     }])
                   );
                   await Promise.all(safetyTaskPromises);
+                  
+                  // Refresh safety tasks immediately after creation
+                  if (createdWorkOrder?.id) {
+                    dispatch(getSafetyTasksByWorkOrder(createdWorkOrder.id));
+                  }
                 }
                 
                 onCreationSuccess();
@@ -823,7 +829,8 @@ function WorkOrders() {
             submitText={t('save')}
             values={{
               ...currentWorkOrder,
-              tasks,
+              tasks: regularTasks,
+              safetyTasks,
               ...getWOBaseValues(t, currentWorkOrder)
             }}
             onChange={({ field, e }) => {}}
@@ -857,10 +864,14 @@ function WorkOrders() {
                   const safetyTaskPromises = formattedValues.safetyTasks.map(safetyTask => 
                     api.patch(`tasks/work-order/${currentWorkOrder.id}`, [{
                       label: safetyTask.taskBase.label,
-                      taskType: safetyTask.taskBase.taskType
+                      taskType: safetyTask.taskBase.taskType,
+                      category: 'SAFETY'
                     }])
                   );
                   await Promise.all(safetyTaskPromises);
+                  
+                  // Refresh safety tasks immediately after update
+                  dispatch(getSafetyTasksByWorkOrder(currentWorkOrder.id));
                 }
 
                 // Update work order (without files)

@@ -3,6 +3,7 @@ package com.grash.dto;
 import com.grash.model.Asset;
 import com.grash.model.Meter;
 import com.grash.model.OwnUser;
+import com.grash.model.enums.TaskCategory;
 import com.grash.model.enums.TaskType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,8 @@ public class TaskBaseDTO {
     private String label;
 
     private TaskType taskType = TaskType.SUBTASK;
+
+    private TaskCategory category = TaskCategory.REGULAR;
 
     private OwnUser user;
 

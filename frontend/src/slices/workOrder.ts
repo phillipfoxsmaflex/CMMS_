@@ -12,7 +12,8 @@ import {
 import PreventiveMaintenance from 'src/models/owns/preventiveMaintenance';
 import { revertAll } from 'src/utils/redux';
 import File from '../models/owns/file';
-import { formatDateForBackend } from 'src/utils/dateUtils';
+import { formatDateOfBirthForBackend } from 'src/utils/dateUtils';
+import { patchTasksOfWorkOrder as patchTasksOfWorkOrderAction } from './task';
 
 const basePath = 'work-orders';
 
@@ -252,6 +253,8 @@ export const addWorkOrder =
         taskBases,
         null
       );
+      // Dispatch the created tasks to the Redux store so they appear immediately
+      dispatch(patchTasksOfWorkOrderAction(workOrderResponse.id, tasks));
     }
   };
 export const editWorkOrder =
@@ -332,11 +335,29 @@ export const getWorkOrdersByPart =
 export const getPDFReport =
   (id: number): AppThunk =>
   async (dispatch): Promise<string> => {
-    const response = await api.get<{ success: boolean; message: string }>(
-      `${basePath}/report/${id}`
-    );
-    const { message } = response;
-    return message;
+    try {
+      const response = await api.get<{ success: boolean; message: string }>(
+        `${basePath}/report/${id}`
+      );
+      const { message } = response;
+      return message;
+    } catch (error) {
+      console.error('Failed to generate PDF report:', error);
+      // Extract error message from the error object
+      let errorMessage = 'Failed to generate report';
+      if (error instanceof Error) {
+        try {
+          const errorData = JSON.parse(error.message);
+          if (errorData && errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (e) {
+          // If parsing fails, use the original error message
+          errorMessage = error.message;
+        }
+      }
+      throw new Error(errorMessage);
+    }
   };
 
 export const getWorkOrderEvents =

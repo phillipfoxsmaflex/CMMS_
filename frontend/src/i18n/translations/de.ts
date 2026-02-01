@@ -69,6 +69,7 @@ const deJSON = {
   management_of_change: 'Management of Change',
   // Permit translations
   permit_create_success: 'Arbeitserlaubnis erfolgreich erstellt',
+  report_generation_failed: 'Berichtgenerierung fehlgeschlagen',
   permit_create_failure: 'Fehler beim Erstellen der Arbeitserlaubnis',
   permit_edit_failure: 'Fehler beim Aktualisieren der Arbeitserlaubnis',
   permit_delete_success: 'Arbeitserlaubnis erfolgreich gelöscht',

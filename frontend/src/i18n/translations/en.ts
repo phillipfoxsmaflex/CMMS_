@@ -48,6 +48,7 @@ const locale = {
   management_of_change: 'Management of Change',
   // Permit translations
   permit_create_success: 'Permit created successfully',
+  report_generation_failed: 'Failed to generate report',
   permit_create_failure: 'Failed to create permit',
   permit_edit_failure: 'Failed to update permit',
   permit_delete_success: 'Permit deleted successfully',

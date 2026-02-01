@@ -6,6 +6,7 @@ import com.grash.model.PreventiveMaintenance;
 import com.grash.model.TaskBase;
 import com.grash.model.WorkOrder;
 import com.grash.model.enums.Status;
+import com.grash.model.enums.TaskCategory;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
@@ -26,6 +27,8 @@ public class TaskShowDTO extends AuditShowDTO {
     private String notes;
 
     private String value;
+
+    private TaskCategory category;
 
     private List<FileShowDTO> images = new ArrayList<>();
 }

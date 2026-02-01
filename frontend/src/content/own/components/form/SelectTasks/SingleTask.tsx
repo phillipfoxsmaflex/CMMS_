@@ -142,7 +142,7 @@ export default function SingleTask({
               )}
             </Select>
           ) : (
-            <Box sx={{ backgroundColor: 'white' }}>
+            <Box sx={{ backgroundColor: 'white', width: '100%' }}>
               <TextField
                 onChange={debouncedChangeHandler}
                 defaultValue={task.value}
@@ -156,6 +156,7 @@ export default function SingleTask({
                     ? 'number'
                     : (task.taskBase.taskType as 'number' | 'text')
                 }
+                fullWidth
               />
             </Box>
           )}

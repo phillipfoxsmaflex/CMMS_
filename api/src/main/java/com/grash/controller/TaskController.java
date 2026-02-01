@@ -7,6 +7,7 @@ import com.grash.dto.TaskShowDTO;
 import com.grash.exception.CustomException;
 import com.grash.mapper.TaskMapper;
 import com.grash.model.*;
+import com.grash.model.enums.TaskCategory;
 import com.grash.model.enums.TaskType;
 import com.grash.model.enums.workflow.WFMainCondition;
 import com.grash.service.*;
@@ -27,6 +28,8 @@ import javax.validation.Valid;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import org.springframework.util.MultiValueMap;
 
 @RestController
 @RequestMapping("/tasks")
@@ -100,18 +103,31 @@ public class TaskController {
         Optional<PreventiveMaintenance> optionalPreventiveMaintenance = preventiveMaintenanceService.findById(id);
         if (optionalPreventiveMaintenance.isPresent() && optionalPreventiveMaintenance.get().canBeEditedBy(user)) {
             taskService.findByPreventiveMaintenance(id).forEach(task -> taskService.delete(task.getId()));
-            Collection<TaskBase> taskBases = taskBasesReq.stream().map(taskBaseDTO ->
-                    taskBaseService.createFromTaskBaseDTO(taskBaseDTO, user.getCompany())).collect(Collectors.toList());
-            return taskBases.stream().map(taskBase -> {
+            // Create a list to hold task bases along with their categories
+            List<TaskBase> taskBases = new ArrayList<>();
+            List<TaskCategory> categories = new ArrayList<>();
+            
+            for (TaskBaseDTO taskBaseDTO : taskBasesReq) {
+                TaskBase taskBase = taskBaseService.createFromTaskBaseDTO(taskBaseDTO, user.getCompany());
+                TaskCategory category = taskBaseDTO.getCategory() != null ? taskBaseDTO.getCategory() : TaskCategory.REGULAR;
+                taskBases.add(taskBase);
+                categories.add(category);
+            }
+            
+            List<TaskShowDTO> result = new ArrayList<>();
+            for (int i = 0; i < taskBases.size(); i++) {
+                TaskBase taskBase = taskBases.get(i);
+                TaskCategory category = safeGetCategory(categories.get(i));
                 StringBuilder value = new StringBuilder();
                 if (taskBase.getTaskType().equals(TaskType.SUBTASK)) {
                     value.append("OPEN");
                 } else if (taskBase.getTaskType().equals(TaskType.INSPECTION)) {
                     value.append("FLAG");
                 }
-                Task task = new Task(taskBase, null, optionalPreventiveMaintenance.get(), value.toString());
-                return taskService.create(task);
-            }).map(taskMapper::toShowDto).collect(Collectors.toList());
+                Task task = new Task(taskBase, null, optionalPreventiveMaintenance.get(), value.toString(), category);
+                result.add(taskMapper.toShowDto(taskService.create(task)));
+            }
+            return result;
         } else throw new CustomException("Not found", HttpStatus.NOT_FOUND);
     }
 
@@ -145,18 +161,30 @@ public class TaskController {
             
             // New approach: Don't delete existing tasks, just create new ones
             // This prevents the StaleStateException and is more robust
-            List<TaskBase> taskBases = taskBasesReq.stream().map(taskBaseDTO ->
-                    taskBaseService.createFromTaskBaseDTO(taskBaseDTO, user.getCompany())).collect(Collectors.toList());
-            return taskBases.stream().map(taskBase -> {
+            List<TaskBase> taskBases = new ArrayList<>();
+            List<TaskCategory> categories = new ArrayList<>();
+            
+            for (TaskBaseDTO taskBaseDTO : taskBasesReq) {
+                TaskBase taskBase = taskBaseService.createFromTaskBaseDTO(taskBaseDTO, user.getCompany());
+                TaskCategory category = taskBaseDTO.getCategory() != null ? taskBaseDTO.getCategory() : TaskCategory.REGULAR;
+                taskBases.add(taskBase);
+                categories.add(category);
+            }
+            
+            List<TaskShowDTO> result = new ArrayList<>();
+            for (int i = 0; i < taskBases.size(); i++) {
+                TaskBase taskBase = taskBases.get(i);
+                TaskCategory category = safeGetCategory(categories.get(i));
                 StringBuilder value = new StringBuilder();
                 if (taskBase.getTaskType().equals(TaskType.SUBTASK)) {
                     value.append("OPEN");
                 } else if (taskBase.getTaskType().equals(TaskType.INSPECTION)) {
                     value.append("FLAG");
                 }
-                Task task = new Task(taskBase, optionalWorkOrder.get(), null, value.toString());
-                return taskService.create(task);
-            }).map(taskMapper::toShowDto).collect(Collectors.toList());
+                Task task = new Task(taskBase, optionalWorkOrder.get(), null, value.toString(), category);
+                result.add(taskMapper.toShowDto(taskService.create(task)));
+            }
+            return result;
         } else throw new CustomException("Not found", HttpStatus.NOT_FOUND);
     }
 
@@ -203,6 +231,20 @@ public class TaskController {
         Collections.sort(reqOptions);
 
         return savedOptions.equals(reqOptions);
+    }
+
+    private TaskCategory safeGetCategory(TaskCategory category) {
+        if (category == null) {
+            return TaskCategory.REGULAR;
+        }
+        try {
+            // This will throw IllegalArgumentException if category is not valid
+            return TaskCategory.valueOf(category.name());
+        } catch (IllegalArgumentException e) {
+            // Log the error and return default
+            log.warn("Unknown task category: {}. Defaulting to REGULAR", category);
+            return TaskCategory.REGULAR;
+        }
     }
 
     @PatchMapping("/{id}")

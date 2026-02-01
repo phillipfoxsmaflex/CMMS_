@@ -190,6 +190,8 @@
              relativeToChangelogFile="true"/>
     <include file="changelog/2026_01_21_1737460000_add_new_permission_structure.xml"
              relativeToChangelogFile="true"/>
+    <include file="changelog/2026_07_01_1747400000_migrate_standard_to_regular.xml"
+             relativeToChangelogFile="true"/>
     <include file="changelog/2026_02_01_1743600000_create_webhook_config_table.xml"
              relativeToChangelogFile="true"/>
 </databaseChangeLog>

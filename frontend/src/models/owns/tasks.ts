@@ -19,12 +19,13 @@ export interface TaskBase {
   id: number;
   label: string;
   taskType: TaskType;
+  category?: TaskCategory;
   options?: TaskOption[];
   user?: UserMiniDTO;
   asset?: AssetMiniDTO;
   meter?: MeterMiniDTO;
 }
-export type TaskCategory = 'REGULAR' | 'SAFETY';
+export type TaskCategory = 'REGULAR' | 'SAFETY' | 'STANDARD';
 
 export interface Task {
   id: number;

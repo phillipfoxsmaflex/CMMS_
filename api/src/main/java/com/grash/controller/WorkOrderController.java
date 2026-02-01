@@ -20,6 +20,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.core.env.Environment;
@@ -51,6 +52,7 @@ import static java.util.stream.Collectors.toCollection;
 @Api(tags = "workOrder")
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class WorkOrderController {
 
     private final WorkOrderService workOrderService;
@@ -432,18 +434,39 @@ public class WorkOrderController {
                 }};
                 thymeleafContext.setVariables(variables);
 
-                String reportHtml = thymeleafTemplateEngine.process("work-order-report.html", thymeleafContext);
+                String reportHtml;
+                try {
+                    reportHtml = thymeleafTemplateEngine.process("work-order-report.html", thymeleafContext);
+                } catch (Exception e) {
+                    log.error("Failed to process Thymeleaf template for work order report: {}", e.getMessage(), e);
+                    throw new CustomException("Failed to generate report template", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+
+                /* Sanitize CSS to remove unsupported selectors that cause iText to fail */
+                String sanitizedHtml = sanitizeCssForPdf(reportHtml);
 
                 /* Setup Source and target I/O streams */
                 ByteArrayOutputStream target = new ByteArrayOutputStream();
-                /* Call convert method */
-                HtmlConverter.convertToPdf(reportHtml, target);
+                try {
+                    /* Call convert method */
+                    HtmlConverter.convertToPdf(sanitizedHtml, target);
+                } catch (Exception e) {
+                    log.error("Failed to convert HTML to PDF: {}", e.getMessage(), e);
+                    throw new CustomException("Failed to convert report to PDF", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+                
                 /* extract output as bytes */
                 byte[] bytes = target.toByteArray();
-                MultipartFile file = new MultipartFileImpl(bytes, "Work Order Report.pdf");
-                return ResponseEntity.ok()
-                        .body(new SuccessResponse(true, storageServiceFactory.getStorageService().uploadAndSign(file,
-                                "reports/" + user.getCompany().getId())));
+                try {
+                    MultipartFile file = new MultipartFileImpl(bytes, "Work Order Report.pdf");
+                    String fileUrl = storageServiceFactory.getStorageService().uploadAndSign(file,
+                            "reports/" + user.getCompany().getId());
+                    return ResponseEntity.ok()
+                            .body(new SuccessResponse(true, fileUrl));
+                } catch (Exception e) {
+                    log.error("Failed to upload report file: {}", e.getMessage(), e);
+                    throw new CustomException("Failed to save report file", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
             } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
         } else throw new CustomException("Not found", HttpStatus.NOT_FOUND);
 
@@ -488,6 +511,23 @@ public class WorkOrderController {
             workOrderService.save(savedWorkOrder);
             return savedWorkOrder.getFiles();
         } else throw new CustomException("Not found", HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * Sanitizes CSS in HTML content to remove unsupported selectors that cause iText PDF conversion to fail.
+     * Removes problematic CSS rules like @keyframes, @-webkit-keyframes, @-ms-viewport, and unsupported pseudo-selectors.
+     */
+    private String sanitizeCssForPdf(String html) {
+        // Remove @keyframes and @-webkit-keyframes rules
+        html = html.replaceAll("(?i)@(-webkit-)?keyframes[^{]*\{[^}]*\}", "");
+        // Remove @-ms-viewport rules
+        html = html.replaceAll("(?i)@-ms-viewport[^{]*\{[^}]*\}", "");
+        // Remove unsupported pseudo-selectors like :-ms-input-placeholder
+        html = html.replaceAll("(?i):-ms-input-placeholder", "");
+        // Remove other problematic pseudo-selectors
+        html = html.replaceAll("(?i):(placeholder|focus-within|focus-visible|is|where)", "");
+        
+        return html;
     }
 
 }

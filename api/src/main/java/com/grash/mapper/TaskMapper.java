@@ -4,6 +4,7 @@ import com.grash.dto.TaskPatchDTO;
 import com.grash.dto.TaskShowDTO;
 import com.grash.model.Task;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Mappings;
 
@@ -14,5 +15,6 @@ public interface TaskMapper {
     @Mappings({})
     TaskPatchDTO toPatchDto(Task model);
 
+    @Mapping(target = "category", source = "model.category")
     TaskShowDTO toShowDto(Task model);
 }

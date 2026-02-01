@@ -209,6 +209,10 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
         handleCloseMenu();
         window.open(url);
       })
+      .catch((error) => {
+        console.error('Failed to generate report:', error);
+        showSnackBar(t('report_generation_failed') || error.message, 'error');
+      })
       .finally(() => setGeneratingReport(false));
   };
   useEffect(() => {

@@ -82,7 +82,15 @@ public class GlobalExceptionHandlerController {
             return new ResponseEntity<>(new SuccessResponse(false, customEx.getMessage()), customEx.getHttpStatus());
         }
         
-        return new ResponseEntity<>(new SuccessResponse(false, ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        // Provide a user-friendly error message instead of technical details
+        String errorMessage = "An unexpected error occurred. Please try again or contact support.";
+        
+        // If the error message contains message source lookup failures, provide a generic message
+        if (ex.getMessage() != null && ex.getMessage().contains("No message found under code")) {
+            errorMessage = "An error occurred while processing your request.";
+        }
+        
+        return new ResponseEntity<>(new SuccessResponse(false, errorMessage), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 }

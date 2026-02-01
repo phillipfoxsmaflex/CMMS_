@@ -42,6 +42,9 @@ public class EmailConfiguration {
         final ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
         messageSource.setBasename("mailMessages");
         messageSource.setDefaultEncoding("UTF-8");
+        // Set a fallback message for unknown codes
+        messageSource.setFallbackToSystemLocale(false);
+        messageSource.setUseCodeAsDefaultMessage(true);
         return messageSource;
     }
 }
