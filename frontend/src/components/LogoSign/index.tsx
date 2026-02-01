@@ -74,6 +74,7 @@ function Logo({ white }: OwnProps) {
             src={logoUrl}
             width={`${width * (mobile ? 0.7 : 1)}px`}
             height={`${height * (mobile ? 0.7 : 1)}px`}
+            alt={brandName}
           />
         </LogoSignWrapper>
       </LogoWrapper>
