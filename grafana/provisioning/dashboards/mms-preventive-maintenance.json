@@ -45,6 +45,7 @@
   "annotations": {
     "list": []
   },
+  "preload": true,
   "refresh": "1h",
   "schemaVersion": 37,
   "style": "dark",
@@ -98,8 +99,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  (COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) * 100.0 / \n   NULLIF(COUNT(DISTINCT pm.id), 0)) as compliance_rate \nFROM preventive_maintenance pm \nLEFT JOIN schedule s ON pm.schedule_id = s.id \nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id \nWHERE s.ends_on >= $__timeFrom() \n  AND s.ends_on <= $__timeTo() \n  AND s.disabled = false",
-          "format": "time_series",
+          "rawSql": "SELECT \n  (COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) * 100.0 / \n   NULLIF(COUNT(DISTINCT pm.id), 0)) as compliance_rate \nFROM preventive_maintenance pm \nLEFT JOIN schedule s ON pm.schedule_id = s.id \nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id \nWHERE s.ends_on >= $__timeFrom()::TIMESTAMP \n  AND s.ends_on <= $__timeTo()::TIMESTAMP \n  AND s.disabled = false",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -127,8 +129,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  COUNT(DISTINCT pm.id) as total_pm_tasks \nFROM preventive_maintenance pm \nLEFT JOIN schedule s ON pm.schedule_id = s.id \nWHERE s.ends_on >= $__timeFrom() \n  AND s.ends_on <= $__timeTo() \n  AND s.disabled = false",
-          "format": "time_series",
+          "rawSql": "SELECT \n  COUNT(DISTINCT pm.id) as total_pm_tasks \nFROM preventive_maintenance pm \nLEFT JOIN schedule s ON pm.schedule_id = s.id \nWHERE s.ends_on >= $__timeFrom()::TIMESTAMP \n  AND s.ends_on <= $__timeTo()::TIMESTAMP \n  AND s.disabled = false",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -173,8 +176,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  COUNT(DISTINCT wo.id) as completed_pm_tasks \nFROM preventive_maintenance pm \nJOIN schedule s ON pm.schedule_id = s.id \nJOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id \nWHERE wo.status = 'COMPLETED' \n  AND s.ends_on >= $__timeFrom() \n  AND s.ends_on <= $__timeTo() \n  AND s.disabled = false",
-          "format": "time_series",
+          "rawSql": "SELECT \n  COUNT(DISTINCT wo.id) as completed_pm_tasks \nFROM preventive_maintenance pm \nJOIN schedule s ON pm.schedule_id = s.id \nJOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id \nWHERE wo.status = 'COMPLETED' \n  AND s.ends_on >= $__timeFrom()::TIMESTAMP \n  AND s.ends_on <= $__timeTo()::TIMESTAMP \n  AND s.disabled = false",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -219,8 +223,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  COUNT(DISTINCT pm.id) as overdue_pm_tasks \nFROM preventive_maintenance pm \nJOIN schedule s ON pm.schedule_id = s.id \nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id \nWHERE s.ends_on < NOW() \n  AND (wo.status IS NULL OR wo.status NOT IN ('COMPLETED', 'CANCELLED')) \n  AND s.ends_on >= $__timeFrom() \n  AND s.ends_on <= $__timeTo() \n  AND s.disabled = false",
-          "format": "time_series",
+          "rawSql": "SELECT \n  COUNT(DISTINCT pm.id) as overdue_pm_tasks \nFROM preventive_maintenance pm \nJOIN schedule s ON pm.schedule_id = s.id \nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id \nWHERE s.ends_on < NOW() \n  AND (wo.status IS NULL OR wo.status NOT IN ('COMPLETED', 'CANCELLED')) \n  AND s.ends_on >= $__timeFrom()::TIMESTAMP \n  AND s.ends_on <= $__timeTo()::TIMESTAMP \n  AND s.disabled = false",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -249,7 +254,8 @@
       "targets": [
         {
           "rawSql": "SELECT \n  COUNT(DISTINCT pm.id) as upcoming_pm_tasks \nFROM preventive_maintenance pm \nJOIN schedule s ON pm.schedule_id = s.id \nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id \nWHERE s.ends_on >= NOW() \n  AND s.ends_on <= NOW() + INTERVAL '30 days' \n  AND (wo.status IS NULL OR wo.status NOT IN ('COMPLETED', 'CANCELLED')) \n  AND s.disabled = false",
-          "format": "time_series",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -286,8 +292,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  DATE_TRUNC('week', s.ends_on) as time,\n  (COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) * 100.0 / \n   NULLIF(COUNT(DISTINCT pm.id), 0)) as compliance_rate\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id\nWHERE s.ends_on >= $__timeFrom()\n  AND s.ends_on <= $__timeTo()\n  AND s.disabled = false\nGROUP BY DATE_TRUNC('week', s.ends_on)\nORDER BY time",
+          "rawSql": "SELECT \n  DATE_TRUNC('week', s.ends_on) as time,\n  (COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) * 100.0 / \n   NULLIF(COUNT(DISTINCT pm.id), 0)) as compliance_rate\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id\nWHERE s.ends_on >= $__timeFrom()::TIMESTAMP\n  AND s.ends_on <= $__timeTo()::TIMESTAMP\n  AND s.disabled = false\nGROUP BY DATE_TRUNC('week', s.ends_on)\nORDER BY time",
           "format": "time_series",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -312,8 +319,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  COALESCE(wo.status, 'NOT_STARTED') as status,\n  COUNT(DISTINCT pm.id) as count\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id\nWHERE s.ends_on >= $__timeFrom()\n  AND s.ends_on <= $__timeTo()\n  AND s.disabled = false\nGROUP BY wo.status\nORDER BY count DESC",
-          "format": "time_series",
+          "rawSql": "SELECT \n  COALESCE(wo.status, 'NOT_STARTED') as status,\n  COUNT(DISTINCT pm.id) as count\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id\nWHERE s.ends_on >= $__timeFrom()::TIMESTAMP\n  AND s.ends_on <= $__timeTo()::TIMESTAMP\n  AND s.disabled = false\nGROUP BY wo.status\nORDER BY count DESC",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -350,8 +358,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  a.name as asset_name,\n  a.custom_id as asset_id,\n  COUNT(DISTINCT pm.id) as total_tasks,\n  COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) as completed_tasks,\n  (COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) * 100.0 / \n   NULLIF(COUNT(DISTINCT pm.id), 0)) as compliance_rate\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id\nLEFT JOIN asset a ON pm.asset_id = a.id\nWHERE s.ends_on >= $__timeFrom()\n  AND s.ends_on <= $__timeTo()\n  AND s.disabled = false\nGROUP BY a.name, a.custom_id\nORDER BY compliance_rate ASC\nLIMIT 20",
-          "format": "time_series",
+          "rawSql": "SELECT \n  a.name as asset_name,\n  a.custom_id as asset_id,\n  COUNT(DISTINCT pm.id) as total_tasks,\n  COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) as completed_tasks,\n  (COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) * 100.0 / \n   NULLIF(COUNT(DISTINCT pm.id), 0)) as compliance_rate\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id\nLEFT JOIN asset a ON pm.asset_id = a.id\nWHERE s.ends_on >= $__timeFrom()::TIMESTAMP\n  AND s.ends_on <= $__timeTo()::TIMESTAMP\n  AND s.disabled = false\nGROUP BY a.name, a.custom_id\nORDER BY compliance_rate ASC\nLIMIT 20",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -378,6 +387,7 @@
         {
           "rawSql": "SELECT \n  s.recurrence_type as frequency,\n  COUNT(DISTINCT pm.id) as task_count,\n  AVG(s.frequency) as avg_days\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nWHERE s.disabled = false\nGROUP BY s.recurrence_type\nORDER BY task_count DESC",
           "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -414,6 +424,7 @@
         {
           "rawSql": "SELECT \n  pm.name as pm_name,\n  a.name as asset_name,\n  a.custom_id as asset_id,\n  s.ends_on as due_date,\n  COALESCE(wo.status, 'NOT_STARTED') as status,\n  EXTRACT(EPOCH FROM (s.ends_on - NOW())) / 86400 as days_until_due\nFROM preventive_maintenance pm\nJOIN schedule s ON pm.schedule_id = s.id\nLEFT JOIN work_order wo ON wo.parent_preventive_maintenance_id = pm.id\nLEFT JOIN asset a ON pm.asset_id = a.id\nWHERE s.ends_on >= NOW()\n  AND s.ends_on <= NOW() + INTERVAL '30 days'\n  AND (wo.status IS NULL OR wo.status NOT IN ('COMPLETED', 'CANCELLED'))\n  AND s.disabled = false\nORDER BY s.ends_on ASC\nLIMIT 50",
           "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]

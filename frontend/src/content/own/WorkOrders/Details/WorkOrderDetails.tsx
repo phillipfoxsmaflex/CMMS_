@@ -74,7 +74,7 @@ import {
   deleteAdditionalCost,
   getAdditionalCosts
 } from '../../../../slices/additionalCost';
-import { getTasksByWorkOrder } from '../../../../slices/task';
+import { getTasksByWorkOrder, getSafetyTasksByWorkOrder } from '../../../../slices/task';
 import { Task } from '../../../../models/owns/tasks';
 import { getWorkOrderHistories } from '../../../../slices/workOrderHistory';
 import LinkModal from './LinkModal';
@@ -220,6 +220,7 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
     dispatch(getLabors(workOrder.id));
     dispatch(getAdditionalCosts(workOrder.id));
     dispatch(getTasksByWorkOrder(workOrder.id));
+    dispatch(getSafetyTasksByWorkOrder(workOrder.id));
     dispatch(getRelations(workOrder.id));
   }, []);
   useEffect(() => {

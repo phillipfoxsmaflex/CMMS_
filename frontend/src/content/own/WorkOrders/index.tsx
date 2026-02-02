@@ -68,7 +68,7 @@ import api from '../../../utils/api';
 import { CustomSnackBarContext } from '../../../contexts/CustomSnackBarContext';
 import { useDispatch, useSelector } from '../../../store';
 import PriorityWrapper from '../components/PriorityWrapper';
-import { patchTasksOfWorkOrder, getSafetyTasksByWorkOrder } from '../../../slices/task';
+import { patchTasksOfWorkOrder, getTasksByWorkOrder, getSafetyTasksByWorkOrder } from '../../../slices/task';
 import { CompanySettingsContext } from '../../../contexts/CompanySettingsContext';
 import useAuth from '../../../hooks/useAuth';
 import { getWOBaseValues } from '../../../utils/woBase';
@@ -140,7 +140,7 @@ function WorkOrders() {
       label: t('calendar_view'),
       disabled: !hasViewPermission(PermissionEntity.WORK_ORDERS)
     },
-    { value: 'column', label: t('column_view'), disabled: true }
+    { value: 'column', label: t('column_view'), disabled: true, hidden: true }
   ];
   const handleTabsChange = (_event: ChangeEvent<{}>, value: string): void => {
     setCurrentTab(value);
@@ -769,21 +769,32 @@ function WorkOrders() {
                   await dispatch(uploadDocuments('WORK_ORDER', createdWorkOrder.id, allFilesToUpload));
                 }
                 
-                // Create safety tasks if any
+                // Create safety tasks if any - but only if they are not already included in regular tasks
                 if (formattedValues.safetyTasks && formattedValues.safetyTasks.length > 0 && createdWorkOrder?.id) {
-                  const safetyTaskPromises = formattedValues.safetyTasks.map(safetyTask => 
-                    api.patch(`tasks/work-order/${createdWorkOrder.id}`, [{
-                      label: safetyTask.taskBase.label,
-                      taskType: safetyTask.taskBase.taskType,
-                      category: 'SAFETY'
-                    }])
+                  // Filter out safety tasks that are already in the regular tasks list to avoid duplication
+                  const uniqueSafetyTasks = formattedValues.safetyTasks.filter(safetyTask => 
+                    !formattedValues.tasks.some(task => 
+                      task.taskBase.label === safetyTask.taskBase.label &&
+                      task.taskBase.taskType === safetyTask.taskBase.taskType
+                    )
                   );
-                  await Promise.all(safetyTaskPromises);
                   
-                  // Refresh safety tasks immediately after creation
-                  if (createdWorkOrder?.id) {
-                    dispatch(getSafetyTasksByWorkOrder(createdWorkOrder.id));
+                  if (uniqueSafetyTasks.length > 0) {
+                    const safetyTaskPromises = uniqueSafetyTasks.map(safetyTask => 
+                      api.patch(`tasks/work-order/${createdWorkOrder.id}`, [{
+                        label: safetyTask.taskBase.label,
+                        taskType: safetyTask.taskBase.taskType,
+                        category: 'SAFETY'
+                      }])
+                    );
+                    await Promise.all(safetyTaskPromises);
                   }
+                }
+                
+                // Always refresh both task lists after creation
+                if (createdWorkOrder?.id) {
+                  dispatch(getTasksByWorkOrder(createdWorkOrder.id));
+                  dispatch(getSafetyTasksByWorkOrder(createdWorkOrder.id));
                 }
                 
                 onCreationSuccess();
@@ -859,20 +870,31 @@ function WorkOrders() {
                   )
                 );
 
-                // Update safety tasks
+                // Update safety tasks - but only if they are not already included in regular tasks
                 if (formattedValues.safetyTasks && formattedValues.safetyTasks.length > 0) {
-                  const safetyTaskPromises = formattedValues.safetyTasks.map(safetyTask => 
-                    api.patch(`tasks/work-order/${currentWorkOrder.id}`, [{
-                      label: safetyTask.taskBase.label,
-                      taskType: safetyTask.taskBase.taskType,
-                      category: 'SAFETY'
-                    }])
+                  // Filter out safety tasks that are already in the regular tasks list to avoid duplication
+                  const uniqueSafetyTasks = formattedValues.safetyTasks.filter(safetyTask => 
+                    !formattedValues.tasks.some(task => 
+                      task.taskBase.label === safetyTask.taskBase.label &&
+                      task.taskBase.taskType === safetyTask.taskBase.taskType
+                    )
                   );
-                  await Promise.all(safetyTaskPromises);
                   
-                  // Refresh safety tasks immediately after update
-                  dispatch(getSafetyTasksByWorkOrder(currentWorkOrder.id));
+                  if (uniqueSafetyTasks.length > 0) {
+                    const safetyTaskPromises = uniqueSafetyTasks.map(safetyTask => 
+                      api.patch(`tasks/work-order/${currentWorkOrder.id}`, [{
+                        label: safetyTask.taskBase.label,
+                        taskType: safetyTask.taskBase.taskType,
+                        category: 'SAFETY'
+                      }])
+                    );
+                    await Promise.all(safetyTaskPromises);
+                  }
                 }
+                
+                // Always refresh both task lists after any changes
+                dispatch(getTasksByWorkOrder(currentWorkOrder.id));
+                dispatch(getSafetyTasksByWorkOrder(currentWorkOrder.id));
 
                 // Update work order (without files)
                 await dispatch(
@@ -953,7 +975,7 @@ function WorkOrders() {
             indicatorColor="primary"
           >
             {tabs.map((tab) =>
-              tab.disabled ? (
+              tab.hidden ? null : tab.disabled ? (
                 <Tooltip title={t('Coming Soon')} placement="top">
                   <span>
                     <Tab

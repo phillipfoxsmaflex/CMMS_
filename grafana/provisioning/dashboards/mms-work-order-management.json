@@ -44,6 +44,7 @@
   "annotations": {
     "list": []
   },
+  "preload": true,
   "refresh": "10m",
   "schemaVersion": 37,
   "style": "dark",
@@ -81,8 +82,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  status, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.created_at >= $__timeFrom() \n  AND wo.created_at <= $__timeTo() \nGROUP BY status \nORDER BY count DESC",
-          "format": "time_series",
+          "rawSql": "SELECT \n  status, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP \nGROUP BY status \nORDER BY count DESC",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -107,8 +109,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  priority, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.created_at >= $__timeFrom() \n  AND wo.created_at <= $__timeTo() \nGROUP BY priority \nORDER BY priority",
-          "format": "time_series",
+          "rawSql": "SELECT \n  priority, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP \nGROUP BY priority \nORDER BY priority",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -154,8 +157,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  AVG(EXTRACT(EPOCH FROM (first_time_to_react - created_at)) / 3600) as avg_response_time_hours \nFROM work_order wo \nWHERE wo.first_time_to_react IS NOT NULL \n  AND wo.created_at >= $__timeFrom() \n  AND wo.created_at <= $__timeTo()",
-          "format": "time_series",
+          "rawSql": "SELECT \n  AVG(EXTRACT(EPOCH FROM (first_time_to_react - created_at)) / 3600) as avg_response_time_hours \nFROM work_order wo \nWHERE wo.first_time_to_react IS NOT NULL \n  AND wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -201,8 +205,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  AVG(EXTRACT(EPOCH FROM (completed_on - created_at)) / 3600) as avg_completion_time_hours \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.completed_on >= $__timeFrom() \n  AND wo.completed_on <= $__timeTo()",
-          "format": "time_series",
+          "rawSql": "SELECT \n  AVG(EXTRACT(EPOCH FROM (completed_on - created_at)) / 3600) as avg_completion_time_hours \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.completed_on >= $__timeFrom()::TIMESTAMP \n  AND wo.completed_on <= $__timeTo()::TIMESTAMP",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -237,8 +242,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  DATE_TRUNC('day', created_at) as time, \n  'Created' as metric, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.created_at >= $__timeFrom() \n  AND wo.created_at <= $__timeTo() \nGROUP BY DATE_TRUNC('day', created_at) \nUNION ALL \nSELECT \n  DATE_TRUNC('day', completed_on) as time, \n  'Completed' as metric, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.completed_on >= $__timeFrom() \n  AND wo.completed_on <= $__timeTo() \nGROUP BY DATE_TRUNC('day', completed_on) \nORDER BY time, metric",
+          "rawSql": "SELECT \n  DATE_TRUNC('day', created_at) as time, \n  'Created' as metric, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP \nGROUP BY DATE_TRUNC('day', created_at) \nUNION ALL \nSELECT \n  DATE_TRUNC('day', completed_on) as time, \n  'Completed' as metric, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.completed_on >= $__timeFrom()::TIMESTAMP \n  AND wo.completed_on <= $__timeTo()::TIMESTAMP \nGROUP BY DATE_TRUNC('day', completed_on) \nORDER BY time, metric",
           "format": "time_series",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -265,6 +271,7 @@
         {
           "rawSql": "WITH daily_counts AS ( \n  SELECT \n    DATE_TRUNC('day', ts.slot) as time, \n    COUNT(CASE WHEN wo.status NOT IN ('COMPLETED', 'CANCELLED') THEN 1 END) as open_count, \n    COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) as completed_count \n  FROM ( \n    SELECT generate_series( \n      $__timeFrom(), \n      $__timeTo(), \n      '1 day'::interval \n    ) as slot \n  ) ts \n  LEFT JOIN work_order wo ON \n    DATE_TRUNC('day', wo.created_at) <= ts.slot \n    AND (wo.completed_on IS NULL OR DATE_TRUNC('day', wo.completed_on) > ts.slot) \n    AND (wo.status <> 'CANCELLED' OR DATE_TRUNC('day', wo.created_at) = ts.slot) \n  GROUP BY DATE_TRUNC('day', ts.slot) \n) \nSELECT \n  time, \n  open_count as backlog \nFROM daily_counts \nORDER BY time",
           "format": "time_series",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -318,8 +325,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  (COUNT(CASE WHEN completed_on <= due_date THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)) as sla_compliance_rate \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.due_date IS NOT NULL \n  AND wo.completed_on >= $__timeFrom() \n  AND wo.completed_on <= $__timeTo()",
-          "format": "time_series",
+          "rawSql": "SELECT \n  (COUNT(CASE WHEN completed_on <= due_date THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)) as sla_compliance_rate \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.due_date IS NOT NULL \n  AND wo.completed_on >= $__timeFrom()::TIMESTAMP \n  AND wo.completed_on <= $__timeTo()::TIMESTAMP",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -364,8 +372,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  COUNT(*) as overdue_count \nFROM work_order wo \nWHERE wo.status NOT IN ('COMPLETED', 'CANCELLED') \n  AND wo.due_date < NOW() \n  AND wo.created_at >= $__timeFrom() \n  AND wo.created_at <= $__timeTo()",
-          "format": "time_series",
+          "rawSql": "SELECT \n  COUNT(*) as overdue_count \nFROM work_order wo \nWHERE wo.status NOT IN ('COMPLETED', 'CANCELLED') \n  AND wo.due_date < NOW() \n  AND wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -391,8 +400,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  priority, \n  AVG(EXTRACT(EPOCH FROM (completed_on - created_at)) / 3600) as avg_completion_hours \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.completed_on >= $__timeFrom() \n  AND wo.completed_on <= $__timeTo() \nGROUP BY priority \nORDER BY priority",
-          "format": "time_series",
+          "rawSql": "SELECT \n  priority, \n  AVG(EXTRACT(EPOCH FROM (completed_on - created_at)) / 3600) as avg_completion_hours \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.completed_on >= $__timeFrom()::TIMESTAMP \n  AND wo.completed_on <= $__timeTo()::TIMESTAMP \nGROUP BY priority \nORDER BY priority",
+          "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]
@@ -427,8 +437,9 @@
       },
       "targets": [
         {
-          "rawSql": "SELECT \n  wo.id as work_order_id, \n  wo.custom_id as work_order_custom_id, \n  wo.title as title, \n  wo.status as status, \n  wo.priority as priority, \n  a.name as asset_name, \n  l.name as location_name, \n  wo.created_at as created_at, \n  wo.due_date as due_date, \n  wo.completed_on as completed_on, \n  EXTRACT(EPOCH FROM (wo.completed_on - wo.created_at)) / 3600 as completion_time_hours, \n  CASE WHEN wo.completed_on <= wo.due_date THEN 'On Time' ELSE 'Overdue' END as sla_status, \n  (SELECT COUNT(*) FROM labor lab WHERE lab.work_order_id = wo.id) as labor_entries, \n  (SELECT COUNT(*) FROM part_consumption pc WHERE pc.work_order_id = wo.id) as parts_used \nFROM work_order wo \nLEFT JOIN asset a ON wo.asset_id = a.id \nLEFT JOIN location l ON wo.location_id = l.id \nWHERE wo.created_at >= $__timeFrom() \n  AND wo.created_at <= $__timeTo() \nORDER BY wo.created_at DESC \nLIMIT 50",
+          "rawSql": "SELECT \n  wo.id as work_order_id, \n  wo.custom_id as work_order_custom_id, \n  wo.title as title, \n  wo.status as status, \n  wo.priority as priority, \n  a.name as asset_name, \n  l.name as location_name, \n  wo.created_at as created_at, \n  wo.due_date as due_date, \n  wo.completed_on as completed_on, \n  EXTRACT(EPOCH FROM (wo.completed_on - wo.created_at)) / 3600 as completion_time_hours, \n  CASE WHEN wo.completed_on <= wo.due_date THEN 'On Time' ELSE 'Overdue' END as sla_status, \n  (SELECT COUNT(*) FROM labor lab WHERE lab.work_order_id = wo.id) as labor_entries, \n  (SELECT COUNT(*) FROM part_consumption pc WHERE pc.work_order_id = wo.id) as parts_used \nFROM work_order wo \nLEFT JOIN asset a ON wo.asset_id = a.id \nLEFT JOIN location l ON wo.location_id = l.id \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP \nORDER BY wo.created_at DESC \nLIMIT 50",
           "format": "table",
+          "hide": false,
           "refId": "A"
         }
       ]

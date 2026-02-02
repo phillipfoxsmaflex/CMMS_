@@ -3,11 +3,16 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+    <changeSet id="add_category_column_to_task" author="vibe">
+        <comment>Add category column to task table</comment>
+        <addColumn tableName="task">
+            <column name="category" type="VARCHAR(255)" defaultValue="REGULAR"/>
+        </addColumn>
+    </changeSet>
     <changeSet id="migrate_standard_to_regular" author="vibe">
         <comment>Migrate task category from STANDARD to REGULAR</comment>
-        <update tableName="task">
-            <column name="category" value="REGULAR"/>
-            <where>category = 'STANDARD'</where>
-        </update>
+        <sql>
+            UPDATE public.task SET category = 'REGULAR' WHERE category = 'STANDARD'
+        </sql>
     </changeSet>
 </databaseChangeLog>

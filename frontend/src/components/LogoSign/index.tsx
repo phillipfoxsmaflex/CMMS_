@@ -61,7 +61,7 @@ function Logo({ white }: OwnProps) {
   const { logo, name: brandName } = useBrand();
 
   // Check for custom logo from static path first
-  const customLogoUrl = '/static/images/logo/LOGO_S.jpeg';
+  const customLogoUrl = '/static/images/logo/LOGO_S.png';
   
   // Determine which logo to use - prioritize custom logo from static path, then useBrand logos
   const logoUrl = customLogoUrl || (white ? logo.white : logo.dark);

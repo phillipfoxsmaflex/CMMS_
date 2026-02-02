@@ -44,7 +44,7 @@ function Hero() {
       >
         <LogoWrapper>
           <img
-            src="/static/images/logo/LOGO_S.jpeg"
+            src="/static/images/logo/LOGO_S.png"
             alt={brandConfig.name}
           />
         </LogoWrapper>
