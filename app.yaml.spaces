@@ -1,0 +1,351 @@
+# DigitalOcean App Platform Configuration (with Spaces)
+# This version uses DigitalOcean Spaces instead of MinIO for better reliability
+# 
+# IMPORTANT: Before deploying:
+# 1. Create a DigitalOcean Space for object storage
+# 2. Generate Spaces access keys (Settings > API > Spaces Keys)
+# 3. Update all environment variables with your actual values
+
+name: mms-app
+region: nyc
+
+services:
+  # --------------------------------------------------------------------------
+  # Frontend Service (React + Nginx)
+  # --------------------------------------------------------------------------
+  - name: frontend
+    github:
+      repo: YOUR_GITHUB_USERNAME/YOUR_REPO_NAME
+      branch: main
+      deploy_on_push: true
+    source_dir: /CMMS_/frontend
+    dockerfile_path: CMMS_/frontend/Dockerfile
+    
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 3000
+    
+    routes:
+      - path: /
+    
+    envs:
+      - key: API_URL
+        value: ${api.PUBLIC_URL}/api
+      - key: GOOGLE_KEY
+        value: ""
+      - key: GOOGLE_TRACKING_ID
+        value: ""
+      - key: MUI_X_LICENSE
+        value: "e0d9bb8070ce0054c9d9ecb6e82cb58fTz0wLEU9MzI0NzIxNDQwMDAwMDAsUz1wcmVtaXVtLExNPXBlcnBldHVhbCxLVj0y"
+      - key: INVITATION_VIA_EMAIL
+        value: "false"
+      - key: CLOUD_VERSION
+        value: "true"
+      - key: NODE_ENV
+        value: "production"
+      - key: ENABLE_SSO
+        value: "false"
+      - key: OAUTH2_PROVIDER
+        value: ""
+      - key: LOGO_PATHS
+        value: ""
+      - key: CUSTOM_COLORS
+        value: ""
+      - key: BRAND_CONFIG
+        value: ""
+      - key: DEMO_LINK
+        value: ""
+    
+    health_check:
+      http_path: /
+      initial_delay_seconds: 60
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+
+  # --------------------------------------------------------------------------
+  # API Service (Spring Boot Backend) - Using DigitalOcean Spaces
+  # --------------------------------------------------------------------------
+  - name: api
+    github:
+      repo: YOUR_GITHUB_USERNAME/YOUR_REPO_NAME
+      branch: main
+      deploy_on_push: true
+    source_dir: /CMMS_/api
+    dockerfile_path: CMMS_/api/Dockerfile
+    
+    instance_count: 1
+    instance_size_slug: basic-xs
+    http_port: 8080
+    
+    routes:
+      - path: /api
+    
+    envs:
+      # Database configuration
+      - key: DB_URL
+        value: ${db.HOSTNAME}:${db.PORT}/${db.DATABASE}
+      - key: DB_USER
+        value: ${db.USERNAME}
+      - key: DB_PWD
+        value: ${db.PASSWORD}
+      
+      # Public URLs
+      - key: PUBLIC_API_URL
+        value: ${_self.PUBLIC_URL}/api
+      - key: PUBLIC_FRONT_URL
+        value: ${frontend.PUBLIC_URL}
+      - key: frontend.url
+        value: ${frontend.PUBLIC_URL}
+      
+      # Security
+      - key: JWT_SECRET_KEY
+        type: SECRET
+        value: "CHANGE_THIS_JWT_SECRET_IN_PRODUCTION"
+      
+      # Spring Boot profile
+      - key: SPRING_PROFILES_ACTIVE
+        value: "prod"
+      
+      # Email Configuration
+      - key: SMTP_HOST
+        value: "smtp.gmail.com"
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        type: SECRET
+        value: ""
+      - key: SMTP_PWD
+        type: SECRET
+        value: ""
+      - key: MAIL_RECIPIENTS
+        value: ""
+      - key: INVITATION_VIA_EMAIL
+        value: "false"
+      - key: ENABLE_EMAIL_NOTIFICATIONS
+        value: "false"
+      
+      # DigitalOcean Spaces Configuration (S3-compatible)
+      # Your Space endpoint format: https://YOUR_SPACE_NAME.REGION.digitaloceanspaces.com
+      - key: STORAGE_TYPE
+        value: "s3"
+      - key: AWS_S3_ENDPOINT
+        value: "https://nyc3.digitaloceanspaces.com"  # Update region as needed
+      - key: AWS_S3_BUCKET
+        value: "your-space-name"  # Your Space name
+      - key: AWS_ACCESS_KEY_ID
+        type: SECRET
+        value: "YOUR_SPACES_ACCESS_KEY"
+      - key: AWS_SECRET_ACCESS_KEY
+        type: SECRET
+        value: "YOUR_SPACES_SECRET_KEY"
+      - key: AWS_REGION
+        value: "nyc3"  # Update to your Space's region
+      
+      # Legacy MinIO variables (may still be referenced in code)
+      - key: MINIO_ENDPOINT
+        value: "https://nyc3.digitaloceanspaces.com"
+      - key: PUBLIC_MINIO_ENDPOINT
+        value: "https://your-space-name.nyc3.digitaloceanspaces.com"
+      - key: MINIO_BUCKET
+        value: "your-space-name"
+      - key: MINIO_ACCESS_KEY
+        type: SECRET
+        value: "YOUR_SPACES_ACCESS_KEY"
+      - key: MINIO_SECRET_KEY
+        type: SECRET
+        value: "YOUR_SPACES_SECRET_KEY"
+      
+      # GCP Storage (Alternative option)
+      - key: GCP_BUCKET_NAME
+        value: ""
+      - key: GCP_JSON
+        type: SECRET
+        value: ""
+      - key: GCP_PROJECT_ID
+        value: ""
+      
+      # FastSpring Configuration
+      - key: FASTSPRING_USER
+        type: SECRET
+        value: ""
+      - key: FASTSPRING_PWD
+        type: SECRET
+        value: ""
+      
+      # SSO Configuration
+      - key: ENABLE_SSO
+        value: "false"
+      - key: OAUTH2_PROVIDER
+        value: ""
+      - key: OAUTH2_CLIENT_ID
+        type: SECRET
+        value: ""
+      - key: OAUTH2_CLIENT_SECRET
+        type: SECRET
+        value: ""
+      
+      # License Configuration
+      - key: LICENSE_KEY
+        type: SECRET
+        value: ""
+      - key: LICENSE_FINGERPRINT_REQUIRED
+        value: "false"
+      - key: ALLOWED_ORGANIZATION_ADMINS
+        value: ""
+      
+      # Branding
+      - key: LOGO_PATHS
+        value: ""
+      - key: CUSTOM_COLORS
+        value: ""
+      - key: BRAND_CONFIG
+        value: ""
+    
+    health_check:
+      http_path: /api/actuator/health
+      initial_delay_seconds: 90
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+
+  # --------------------------------------------------------------------------
+  # InfluxDB Service (Time Series Database)
+  # --------------------------------------------------------------------------
+  - name: influxdb
+    image:
+      registry_type: DOCKER_HUB
+      registry: influxdb
+      repository: influxdb
+      tag: "2.8"
+    
+    instance_count: 1
+    instance_size_slug: basic-xs
+    http_port: 8086
+    
+    routes:
+      - path: /influxdb
+    
+    envs:
+      - key: DOCKER_INFLUXDB_INIT_MODE
+        value: "setup"
+      - key: DOCKER_INFLUXDB_INIT_USERNAME
+        value: "admin"
+      - key: DOCKER_INFLUXDB_INIT_PASSWORD
+        type: SECRET
+        value: "securepassword"
+      - key: DOCKER_INFLUXDB_INIT_ORG
+        value: "mms"
+      - key: DOCKER_INFLUXDB_INIT_BUCKET
+        value: "assets"
+      - key: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+        type: SECRET
+        value: "my-super-secret-influxdb-token-change-me"
+      - key: INFLUXDB_HTTP_BIND_ADDRESS
+        value: ":8086"
+      - key: INFLUXDB_REPORTING_DISABLED
+        value: "true"
+    
+    health_check:
+      http_path: /influxdb/health
+      initial_delay_seconds: 60
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+
+  # --------------------------------------------------------------------------
+  # Grafana Service (Visualization & Analytics)
+  # --------------------------------------------------------------------------
+  - name: grafana
+    image:
+      registry_type: DOCKER_HUB
+      registry: grafana
+      repository: grafana
+      tag: "latest"
+    
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 3000
+    
+    routes:
+      - path: /grafana
+    
+    envs:
+      - key: GF_SECURITY_ADMIN_USER
+        value: "admin"
+      - key: GF_SECURITY_ADMIN_PASSWORD
+        type: SECRET
+        value: "adminpassword"
+      - key: GF_AUTH_ANONYMOUS_ENABLED
+        value: "true"
+      - key: GF_AUTH_ANONYMOUS_ORG_ROLE
+        value: "Viewer"
+      - key: GF_SERVER_DOMAIN
+        value: "${_self.PUBLIC_URL}"
+      - key: GF_SERVER_ROOT_URL
+        value: "${_self.PUBLIC_URL}/grafana/"
+      - key: GF_SERVER_SERVE_FROM_SUB_PATH
+        value: "true"
+      - key: GF_INSTALL_PLUGINS
+        value: ""
+      - key: INFLUXDB_ADMIN_TOKEN
+        type: SECRET
+        value: "my-super-secret-influxdb-token-change-me"
+      - key: POSTGRES_USER
+        value: ${db.USERNAME}
+      - key: POSTGRES_PWD
+        value: ${db.PASSWORD}
+    
+    health_check:
+      http_path: /grafana/api/health
+      initial_delay_seconds: 30
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+
+databases:
+  - name: db
+    engine: PG
+    version: "16"
+    production: false  # Set to true for production
+    cluster_name: mms-db-cluster
+    db_name: mms
+    db_user: rootUser
+
+# ============================================================================
+# SETUP INSTRUCTIONS FOR DIGITALOCEAN SPACES
+# ============================================================================
+# 
+# 1. CREATE A SPACE:
+#    - Go to DigitalOcean Console > Spaces
+#    - Click "Create a Space"
+#    - Choose a region (e.g., NYC3)
+#    - Name your Space (e.g., "mms-storage")
+#    - Enable CDN if you want faster global access
+# 
+# 2. GENERATE ACCESS KEYS:
+#    - Go to API > Spaces Keys
+#    - Click "Generate New Key"
+#    - Save the Access Key ID and Secret Key securely
+# 
+# 3. UPDATE APP.YAML:
+#    - Replace "your-space-name" with your actual Space name
+#    - Update AWS_S3_ENDPOINT region if not using nyc3
+#    - Update AWS_ACCESS_KEY_ID with your Spaces Access Key
+#    - Update AWS_SECRET_ACCESS_KEY with your Spaces Secret Key
+#    - Update PUBLIC_MINIO_ENDPOINT with your Space's public URL
+# 
+# 4. CONFIGURE CORS (Optional):
+#    - In your Space settings, configure CORS if your frontend needs direct access
+#    - Add your frontend domain to allowed origins
+# 
+# 5. NOTE ON CODE CHANGES:
+#    - If your backend code uses MinIO SDK, it should be S3-compatible
+#    - DigitalOcean Spaces is fully compatible with AWS S3 API
+#    - No code changes should be needed if using standard S3 libraries
+# 
+# ============================================================================
