@@ -1,0 +1,166 @@
+name: cmms-app
+region: fra
+services:
+  - name: api
+    dockerfile_path: api/Dockerfile
+    source_dir: api
+    github:
+      branch: app-platform
+      deploy_on_push: true
+    envs:
+      - key: DB_URL
+        value: ${db.DB_HOST}:${db.DB_PORT}/${db.DB_NAME}
+      - key: DB_USER
+        value: ${db.DB_USER}
+      - key: DB_PWD
+        value: ${db.DB_PASSWORD}
+      - key: PUBLIC_API_URL
+        value: ${app.APP_URL}
+      - key: PUBLIC_FRONT_URL
+        value: ${frontend.FRONTEND_URL}
+      - key: frontend.url
+        value: ${frontend.FRONTEND_URL}
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: JWT_SECRET_KEY
+        value: ${app.JWT_SECRET}
+      - key: MINIO_ENDPOINT
+        value: ${minio.MINIO_HOST}
+      - key: MINIO_BUCKET
+        value: ${minio.MINIO_BUCKET}
+      - key: MINIO_ACCESS_KEY
+        value: ${minio.MINIO_ACCESS_KEY}
+      - key: MINIO_SECRET_KEY
+        value: ${minio.MINIO_SECRET_KEY}
+      - key: STORAGE_TYPE
+        value: minio
+      - key: PUBLIC_MINIO_ENDPOINT
+        value: ${minio.MINIO_PUBLIC_URL}
+      - key: INVITATION_VIA_EMAIL
+        value: "false"
+      - key: ENABLE_EMAIL_NOTIFICATIONS
+        value: "false"
+      - key: ENABLE_SSO
+        value: "false"
+    http_port: 8080
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    routes:
+      - path: /api
+
+  - name: frontend
+    dockerfile_path: frontend/Dockerfile
+    source_dir: frontend
+    github:
+      branch: app-platform
+      deploy_on_push: true
+    envs:
+      - key: API_URL
+        value: ${app.APP_URL}/api
+      - key: GOOGLE_KEY
+        value: ${app.GOOGLE_KEY}
+      - key: GOOGLE_TRACKING_ID
+        value: ${app.GOOGLE_TRACKING_ID}
+      - key: MUI_X_LICENSE
+        value: ${app.MUI_X_LICENSE}
+      - key: INVITATION_VIA_EMAIL
+        value: "false"
+      - key: CLOUD_VERSION
+        value: "true"
+      - key: NODE_ENV
+        value: production
+      - key: ENABLE_SSO
+        value: "false"
+    http_port: 3000
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    routes:
+      - path: /
+
+  - name: minio
+    dockerfile_path: Dockerfile.minio
+    github:
+      branch: app-platform
+      deploy_on_push: true
+    envs:
+      - key: MINIO_ROOT_USER
+        value: ${minio.MINIO_ACCESS_KEY}
+      - key: MINIO_ROOT_PASSWORD
+        value: ${minio.MINIO_SECRET_KEY}
+    http_port: 9000
+    instance_size_slug: basic-xs
+    instance_count: 1
+    routes:
+      - path: /minio
+
+  - name: grafana
+    dockerfile_path: Dockerfile.grafana
+    github:
+      branch: app-platform
+      deploy_on_push: true
+    envs:
+      - key: GF_SECURITY_ADMIN_USER
+        value: ${grafana.ADMIN_USER}
+      - key: GF_SECURITY_ADMIN_PASSWORD
+        value: ${grafana.ADMIN_PASSWORD}
+      - key: GF_AUTH_ANONYMOUS_ENABLED
+        value: "true"
+      - key: GF_AUTH_ANONYMOUS_ORG_ROLE
+        value: "Viewer"
+    http_port: 3000
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    routes:
+      - path: /grafana
+
+databases:
+  - name: db
+    engine: PG
+    version: 16
+    production: true
+    db_name: mms
+    db_user: mms_user
+
+  - name: influxdb
+    engine: INFLUX
+    version: 2
+    production: true
+
+jobs:
+  - name: setup-minio
+    kind: PRE_DEPLOY
+    dockerfile_path: Dockerfile.setup-minio
+    github:
+      branch: app-platform
+    envs:
+      - key: MINIO_ENDPOINT
+        value: ${minio.MINIO_HOST}
+      - key: MINIO_ACCESS_KEY
+        value: ${minio.MINIO_ACCESS_KEY}
+      - key: MINIO_SECRET_KEY
+        value: ${minio.MINIO_SECRET_KEY}
+      - key: MINIO_BUCKET
+        value: ${minio.MINIO_BUCKET}
+
+  - name: setup-grafana
+    kind: PRE_DEPLOY
+    dockerfile_path: Dockerfile.setup-grafana
+    github:
+      branch: app-platform
+    envs:
+      - key: GRAFANA_ENDPOINT
+        value: ${grafana.GRAFANA_URL}
+      - key: GRAFANA_ADMIN_USER
+        value: ${grafana.ADMIN_USER}
+      - key: GRAFANA_ADMIN_PASSWORD
+        value: ${grafana.ADMIN_PASSWORD}
+      - key: INFLUXDB_ENDPOINT
+        value: ${influxdb.INFLUXDB_URL}
+      - key: INFLUXDB_TOKEN
+        value: ${influxdb.INFLUXDB_TOKEN}
+      - key: POSTGRES_HOST
+        value: ${db.DB_HOST}
+      - key: POSTGRES_USER
+        value: ${db.DB_USER}
+      - key: POSTGRES_PASSWORD
+        value: ${db.DB_PASSWORD}

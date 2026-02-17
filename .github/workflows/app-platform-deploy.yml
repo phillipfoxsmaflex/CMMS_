@@ -1,0 +1,26 @@
+name: DigitalOcean App Platform Deployment
+
+on:
+  push:
+    branches: [ app-platform ]
+  pull_request:
+    branches: [ app-platform ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install DigitalOcean CLI
+        run: |
+          curl -sL https://github.com/digitalocean/doctl/releases/download/v1.101.0/doctl-1.101.0-linux-amd64.tar.gz | tar -xzv
+          sudo mv doctl /usr/local/bin
+
+      - name: Authenticate with DigitalOcean
+        run: doctl auth init --token ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Deploy to DigitalOcean App Platform
+        run: |
+          doctl apps create --spec app.yaml
