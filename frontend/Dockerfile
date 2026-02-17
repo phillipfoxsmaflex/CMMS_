@@ -20,13 +20,12 @@ COPY --from=build /usr/src/app/build /usr/share/nginx/html
 COPY --from=build /usr/src/app/.env.example /usr/share/nginx/html/.env
 COPY --from=build /usr/src/app/nginx-custom.conf /etc/nginx/conf.d/default.conf
 
-RUN apk add --update nodejs
-RUN apk add --update npm
+RUN apk add --update nodejs npm
 
-RUN npm i -g runtime-env-cra
+RUN npm install -g runtime-env-cra
 
 WORKDIR /usr/share/nginx/html
 EXPOSE 3000
 
-CMD ["/bin/sh", "-c", "runtime-env-cra --config-name=./runtime-env.js && nginx -g \"daemon off;\""]
+CMD ["sh", "-c", "runtime-env-cra --config-name=./runtime-env.js && nginx -g 'daemon off;'"]
 
