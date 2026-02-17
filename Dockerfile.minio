@@ -1,0 +1,10 @@
+# MinIO Dockerfile für DigitalOcean App Platform
+FROM minio/minio:RELEASE.2025-04-22T22-12-26Z
+
+# MinIO Konfiguration
+ENV MINIO_ROOT_USER=${MINIO_ROOT_USER}
+ENV MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+ENV MINIO_BUCKET=mms-bucket
+
+# Standard Kommando - MinIO Server starten
+CMD ["server", "/data", "--address", ":9000", "--console-address", ":9001"]
