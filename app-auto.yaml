@@ -1,0 +1,49 @@
+name: cmms-auto
+region: fra
+services:
+  - name: api
+    dockerfile_path: Dockerfile.api
+    source_dir: api
+    github:
+      repo: phillipfoxsmaflex/CMMS_
+      branch: app-platform
+      deploy_on_push: true
+    http_port: 8080
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    routes:
+      - path: /api
+    envs:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: JWT_SECRET_KEY
+        value: your-secure-jwt-secret-change-me
+      - key: STORAGE_TYPE
+        value: minio
+
+  - name: frontend
+    dockerfile_path: Dockerfile.frontend
+    source_dir: frontend
+    github:
+      repo: phillipfoxsmaflex/CMMS_
+      branch: app-platform
+      deploy_on_push: true
+    http_port: 3000
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    routes:
+      - path: /
+    envs:
+      - key: API_URL
+        value: /api
+      - key: NODE_ENV
+        value: production
+
+databases:
+  - name: db
+    engine: PG
+    version: "16"
+    production: true
+    cluster_name: cmms-db-cluster
+    db_name: mms
+    db_user: mms_user
