@@ -27,6 +27,8 @@ const locale = {
   try_grash: 'Try {{shortBrandName}}',
   login: 'Log In',
   start_trial: 'Start a Free trial',
+  welcome_to_mms: 'Welcome to Maintenance Management System',
+  choose_option_below: 'Please choose an option below to continue',
   'home.what': 'What',
   'home.you_will_have': "You'll have",
   'home.you_will_have_description':

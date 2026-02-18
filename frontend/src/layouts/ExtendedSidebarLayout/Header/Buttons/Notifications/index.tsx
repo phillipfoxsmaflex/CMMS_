@@ -62,7 +62,7 @@ import { People } from '@mui/icons-material';
 import ReceiptTwoToneIcon from '@mui/icons-material/ReceiptTwoTone';
 import { SearchCriteria } from '../../../../../models/owns/page';
 import SockJS from 'sockjs-client';
-import { apiUrl } from 'src/config';
+import { getCurrentApiUrl } from 'src/config';
 import useAuth from 'src/hooks/useAuth';
 import { Stomp } from '@stomp/stompjs';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -156,7 +156,7 @@ function HeaderNotifications() {
     if (user) {
       if (!stompClient) {
         // Remove '/api/' from the URL for WebSocket connections
-        const websocketUrl = apiUrl.replace('/api/', '');
+        const websocketUrl = getCurrentApiUrl().replace('/api/', '');
         const socket = new SockJS(`${websocketUrl}ws`);
         const client = Stomp.over(socket);
         client.connect({ token: localStorage.getItem('accessToken') }, function(frame) {

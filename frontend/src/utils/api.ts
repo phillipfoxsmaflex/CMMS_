@@ -1,4 +1,4 @@
-import { apiUrl } from '../config';
+import { getCurrentApiUrl } from '../config';
 
 type Options = RequestInit & { raw?: boolean; headers?: HeadersInit };
 function api<T>(url: string, options: Options = {}): Promise<T> {
@@ -21,12 +21,14 @@ function api<T>(url: string, options: Options = {}): Promise<T> {
 }
 
 function get<T>(url, options?: Options) {
-  const normalizedUrl = apiUrl.endsWith('/') && url.startsWith('/') ? apiUrl + url.substring(1) : apiUrl + url;
+  const currentApiUrl = getCurrentApiUrl();
+  const normalizedUrl = currentApiUrl.endsWith('/') && url.startsWith('/') ? currentApiUrl + url.substring(1) : currentApiUrl + url;
   return api<T>(normalizedUrl, options);
 }
 
 function post<T>(url, data, options?: Options, isNotJson?: boolean) {
-  const normalizedUrl = apiUrl.endsWith('/') && url.startsWith('/') ? apiUrl + url.substring(1) : apiUrl + url;
+  const currentApiUrl = getCurrentApiUrl();
+  const normalizedUrl = currentApiUrl.endsWith('/') && url.startsWith('/') ? currentApiUrl + url.substring(1) : currentApiUrl + url;
   console.log('[API POST DEBUG] Calling:', normalizedUrl, 'with data:', data);
   // If data is FormData, pass it as-is
   const body = data instanceof FormData ? data : (isNotJson ? data : JSON.stringify(data));
@@ -44,7 +46,8 @@ function post<T>(url, data, options?: Options, isNotJson?: boolean) {
 }
 
 function patch<T>(url, data, options?: Options) {
-  const normalizedUrl = apiUrl.endsWith('/') && url.startsWith('/') ? apiUrl + url.substring(1) : apiUrl + url;
+  const currentApiUrl = getCurrentApiUrl();
+  const normalizedUrl = currentApiUrl.endsWith('/') && url.startsWith('/') ? currentApiUrl + url.substring(1) : currentApiUrl + url;
   return api<T>(normalizedUrl, {
     ...options,
     method: 'PATCH',
@@ -53,7 +56,8 @@ function patch<T>(url, data, options?: Options) {
 }
 
 function deletes<T>(url, options?: Options) {
-  const normalizedUrl = apiUrl.endsWith('/') && url.startsWith('/') ? apiUrl + url.substring(1) : apiUrl + url;
+  const currentApiUrl = getCurrentApiUrl();
+  const normalizedUrl = currentApiUrl.endsWith('/') && url.startsWith('/') ? currentApiUrl + url.substring(1) : currentApiUrl + url;
   return api<T>(normalizedUrl, { ...options, method: 'DELETE' });
 }
 

@@ -1,0 +1,445 @@
+{
+  "title": "MMS Maintenance Performance Overview",
+  "description": "Executive dashboard for maintenance performance tracking - KPIs, trends, and overall efficiency metrics",
+  "tags": [
+    "maintenance",
+    "executive",
+    "kpi"
+  ],
+  "uid": "mms-maintenance-overview",
+  "version": 1,
+  "timezone": "browser",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ],
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "preload": true,
+  "refresh": "30m",
+  "schemaVersion": 37,
+  "style": "dark",
+  "panels": [
+    {
+      "title": "Maintenance Performance KPIs",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "title": "Overall Equipment Effectiveness (OEE)",
+      "type": "gauge",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 100,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 70
+              },
+              {
+                "color": "green",
+                "value": 90
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  CASE \n    WHEN SUM(availability) = 0 THEN 0 \n    ELSE \n      (SUM(availability) * SUM(performance) * SUM(quality)) / (COUNT(*) * 100 * 100) * 100 \n  END as oee \nFROM ( \n  SELECT \n    a.id as asset_id, \n    -- Availability: Uptime / (Uptime + Downtime) \n    CASE \n      WHEN (EXTRACT(EPOCH FROM (NOW() - a.in_service_date)) / 3600) = 0 THEN 100 \n      ELSE \n        100 - ( \n          (SELECT COALESCE(SUM(ad.duration / 3600), 0) \n           FROM asset_downtime ad \n           WHERE ad.asset_id = a.id \n             AND ad.starts_on >= $__timeFrom()::TIMESTAMP \n             AND ad.starts_on <= $__timeTo()::TIMESTAMP \n             AND ad.company_id = a.company_id) \n          / \n          (EXTRACT(EPOCH FROM ($__timeTo()::TIMESTAMP - $__timeFrom()::TIMESTAMP)) / 3600) \n          * 100 \n        ) \n    END as availability, \n    -- Performance: Actual output / Theoretical output (simplified) \n    95 as performance, \n    -- Quality: Good output / Total output (simplified) \n    98 as quality \n  FROM asset a \n  WHERE a.archived = false \n) as oee_calc",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Mean Time To Repair (MTTR)",
+      "type": "stat",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dtdurations",
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 4
+              },
+              {
+                "color": "red",
+                "value": 8
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  AVG(EXTRACT(EPOCH FROM (completed_on - created_at)) / 3600) as mttr_hours \nFROM work_order wo \nLEFT JOIN request r ON wo.parent_request_id = r.id AND r.cancellation_reason IS NULL \nWHERE wo.status = 'COMPLETED' \n  AND wo.completed_on >= $__timeFrom()::TIMESTAMP \n  AND wo.completed_on <= $__timeTo()::TIMESTAMP",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Mean Time Between Failures (MTBF)",
+      "type": "stat",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dtdurations",
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 168
+              },
+              {
+                "color": "green",
+                "value": 336
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "WITH failure_events AS ( \n  SELECT \n    ad.asset_id, \n    ad.starts_on as failure_time, \n    LEAD(ad.starts_on) OVER (PARTITION BY ad.asset_id ORDER BY ad.starts_on) as next_failure_time \n  FROM asset_downtime ad \n  JOIN asset a ON ad.asset_id = a.id \n    AND ad.starts_on >= $__timeFrom()::TIMESTAMP \n    AND ad.starts_on <= $__timeTo()::TIMESTAMP \n    AND ad.company_id = a.company_id \n) \nSELECT \n  AVG(EXTRACT(EPOCH FROM (next_failure_time - failure_time)) / 3600) as mtbf_hours \nFROM failure_events \nWHERE next_failure_time IS NOT NULL",
+          "format": "time_series",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Work Order Completion Rate",
+      "type": "stat",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  (COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)) as completion_rate \nFROM work_order wo \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Work Order Trends",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      }
+    },
+    {
+      "title": "Work Orders by Status",
+      "type": "timeseries",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  DATE_TRUNC('day', created_at) as time, \n  status, \n  COUNT(*) as count \nFROM work_order wo \nWHERE created_at >= $__timeFrom()::TIMESTAMP \n  AND created_at <= $__timeTo()::TIMESTAMP \nGROUP BY DATE_TRUNC('day', created_at), status \nORDER BY time, status",
+          "format": "time_series",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Work Orders by Priority",
+      "type": "piechart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  priority, \n  COUNT(*) as count \nFROM work_order wo \nWHERE created_at >= $__timeFrom()::TIMESTAMP \n  AND created_at <= $__timeTo()::TIMESTAMP \nGROUP BY priority \nORDER BY count DESC",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Cost Analysis",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      }
+    },
+    {
+      "title": "Maintenance Costs Over Time",
+      "type": "timeseries",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyEUR"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  DATE_TRUNC('day', wo.created_at) as time, \n  'Labor Costs' as metric, \n  COALESCE(SUM(lab.duration * lab.hourly_rate), 0) as cost \nFROM work_order wo \nLEFT JOIN labor lab ON wo.id = lab.work_order_id \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP \nGROUP BY DATE_TRUNC('day', wo.created_at) \nUNION ALL \nSELECT \n  DATE_TRUNC('day', wo.created_at) as time, \n  'Parts Costs' as metric, \n  COALESCE(SUM(pc.quantity * p.cost), 0) as cost \nFROM work_order wo \nLEFT JOIN part_consumption pc ON wo.id = pc.work_order_id \nLEFT JOIN part p ON pc.part_id = p.id \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP \nGROUP BY DATE_TRUNC('day', wo.created_at) \nORDER BY time, metric",
+          "format": "time_series",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Cost Distribution",
+      "type": "piechart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyEUR"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  'Labor Costs' as category, \n  COALESCE(SUM(lab.duration * lab.hourly_rate), 0) as cost \nFROM work_order wo \nLEFT JOIN labor lab ON wo.id = lab.work_order_id \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP \nUNION ALL \nSELECT \n  'Parts Costs' as category, \n  COALESCE(SUM(pc.quantity * p.cost), 0) as cost \nFROM work_order wo \nLEFT JOIN part_consumption pc ON wo.id = pc.work_order_id \nLEFT JOIN part p ON pc.part_id = p.id \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Asset Performance",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      }
+    },
+    {
+      "title": "Top 10 Assets by Downtime",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  a.id as asset_id, \n  a.name as asset_name, \n  a.custom_id as asset_custom_id, \n  l.name as location_name, \n  SUM(ad.duration / 3600.0) as total_downtime_hours, \n  COUNT(ad.*) as downtime_events \nFROM asset a \nLEFT JOIN asset_downtime ad ON a.id = ad.asset_id \nLEFT JOIN location l ON a.location_id = l.id \nWHERE a.archived = false \n  AND ad.starts_on >= $__timeFrom()::TIMESTAMP \n  AND ad.starts_on <= $__timeTo()::TIMESTAMP \n  AND ad.company_id = a.company_id \nGROUP BY a.id, a.name, a.custom_id, l.name \nORDER BY total_downtime_hours DESC \nLIMIT 10",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Asset Availability by Category",
+      "type": "barchart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  ac.name as category, \n  AVG( \n    100 - ( \n      (SELECT COALESCE(SUM(ad.duration / 3600), 0) \n       FROM asset_downtime ad \n       WHERE ad.asset_id = a.id \n         AND ad.starts_on >= $__timeFrom()::TIMESTAMP \n         AND ad.starts_on <= $__timeTo()::TIMESTAMP \n         AND ad.company_id = a.company_id) \n      / \n      (EXTRACT(EPOCH FROM ($__timeTo()::TIMESTAMP - $__timeFrom()::TIMESTAMP)) / 3600) \n      * 100 \n    ) \n  ) as availability_percentage \nFROM asset a \nJOIN asset_category ac ON a.category_id = ac.id \nWHERE a.archived = false \nGROUP BY ac.name \nORDER BY availability_percentage ASC",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

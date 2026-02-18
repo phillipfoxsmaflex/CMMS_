@@ -48,7 +48,17 @@
   <link rel="assetlinks.json file" href="%PUBLIC_URL%/.well-known/assetlinks.json" />
 
   <!-- Runtime Environment -->
-  <script src="%PUBLIC_URL%/runtime-env.js"></script>
+  <script>
+    window.__RUNTIME_CONFIG__ = {
+      API_URL: 'https://foxbau.org/api',
+      GOOGLE_KEY: '',
+      GOOGLE_TRACKING_ID: '',
+      MUI_X_LICENSE: 'e0d9bb8070ce0054c9d9ecb6e82cb58fTz0wLEU9MzI0NzIxNDQwMDAwMDAsUz1wcmVtaXVtLExNPXBlcnBldHVhbCxLVj0y',
+      INVITATION_VIA_EMAIL: 'false',
+      CLOUD_VERSION: 'true',
+      ENABLE_SSO: 'false'
+    };
+  </script>
 </head>
 
 <body>

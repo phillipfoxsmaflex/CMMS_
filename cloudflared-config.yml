@@ -1,0 +1,17 @@
+tunnel: b15df251-1d96-4854-83c1-45d12789ae58
+credentials-file: /root/.cloudflared/b15df251-1d96-4854-83c1-45d12789ae58.json
+ingress:
+  # Frontend - React-Anwendung
+  - hostname: foxbau.org
+    service: http://172.18.0.7:3000
+  
+  # Backend API - direkte Weiterleitung unter /api Pfad
+  - hostname: foxbau.org
+    service: http://172.18.0.5:8080
+    path: /api
+  
+  # Fallback für nicht gefundene Routen
+  - service: http_status:404
+
+# Origin Certificate (wird automatisch von Cloudflare generiert)
+origincert: /root/.cloudflared/cert.pem

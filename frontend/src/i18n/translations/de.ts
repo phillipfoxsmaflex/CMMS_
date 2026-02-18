@@ -47,6 +47,8 @@ const deJSON = {
   try_grash: 'Probieren Sie {{shortBrandName}}',
   login: 'Einloggen',
   start_trial: 'Kostenlose Testversion starten',
+  welcome_to_mms: 'Willkommen beim Wartungsmanagementsystem',
+  choose_option_below: 'Bitte wählen Sie eine Option unten aus, um fortzufahren',
   'home.what': 'Was',
   'home.you_will_have': 'Sie werden haben',
   'home.you_will_have_description':

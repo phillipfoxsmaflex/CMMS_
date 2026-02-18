@@ -1,9 +1,9 @@
 import axios from 'axios';
 import AxiosMockAdapter from 'axios-mock-adapter';
-import { apiUrl } from '../config';
+import { getCurrentApiUrl } from '../config';
 
 const axiosInt = axios.create({
-  baseURL: apiUrl
+  baseURL: getCurrentApiUrl()
 });
 
 // Request interceptor to add Authorization header

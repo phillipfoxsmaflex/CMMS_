@@ -28,7 +28,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ onSignatureSave, open, onCl
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle>Elektronische Signatur</DialogTitle>
       <DialogContent>
         <Box mt={2} mb={2}>
@@ -41,12 +41,13 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ onSignatureSave, open, onCl
             borderRadius={1} 
             p={1} 
             mb={2}
+            width="100%"
           >
             <SignatureCanvas
               ref={sigCanvas}
               canvasProps={{ 
                 width: '100%',
-                height: 200,
+                height: 800,
                 className: 'sigCanvas'
               }}
               backgroundColor="#f5f5f5"

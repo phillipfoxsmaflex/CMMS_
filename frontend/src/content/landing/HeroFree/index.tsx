@@ -29,13 +29,18 @@ function HeroFree() {
     <HeroWrapper>
       <Container maxWidth="md">
         <ContentBox>
-          <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
-            <Logo />
+          <Box sx={{ mb: 6, textAlign: 'center' }}>
+            <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+              {t('welcome_to_mms')}
+            </h1>
+            <p style={{ fontSize: '1.2rem', color: '#666', marginBottom: '3rem' }}>
+              {t('choose_option_below')}
+            </p>
           </Box>
 
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
-            spacing={2}
+            spacing={3}
             justifyContent="center"
           >
             <Button
@@ -43,7 +48,12 @@ function HeroFree() {
               to="/account/login"
               size="large"
               variant="outlined"
-              sx={{ minWidth: 180 }}
+              sx={{
+                minWidth: 200,
+                padding: '12px 24px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold'
+              }}
             >
               {t('login')}
             </Button>
@@ -52,7 +62,12 @@ function HeroFree() {
               to="/account/register"
               size="large"
               variant="contained"
-              sx={{ minWidth: 180 }}
+              sx={{
+                minWidth: 200,
+                padding: '12px 24px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold'
+              }}
             >
               {t('register')}
             </Button>

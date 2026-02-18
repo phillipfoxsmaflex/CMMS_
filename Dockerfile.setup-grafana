@@ -1,8 +1,0 @@
-# Setup Dockerfile für Grafana Initialisierung
-FROM curlimages/curl:latest
-
-# Grafana Setup Skript
-COPY setup-grafana.sh /setup-grafana.sh
-RUN chmod +x /setup-grafana.sh
-
-CMD ["/setup-grafana.sh"]

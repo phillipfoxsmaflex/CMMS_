@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provisioning-config
+data:
+  datasources.yml: |
+    apiVersion: 1
+    datasources:
+    - name: InfluxDB
+      type: influxdb
+      access: proxy
+      url: http://influxdb:8086
+      secureJsonData:
+        token: ${INFLUXDB_ADMIN_TOKEN}
+      jsonData:
+        version: Flux
+        organization: mms
+        defaultBucket: assets
+        tlsSkipVerify: true
+    - name: PostgreSQL
+      type: postgres
+      url: postgres:5432
+      database: mms
+      user: ${POSTGRES_USER}
+      secureJsonData:
+        password: ${POSTGRES_PWD}
+      jsonData:
+        sslmode: "disable"
+        postgresVersion: 1200
+        timescaledb: false
+  dashboards.yml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /etc/grafana/provisioning/dashboards

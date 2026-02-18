@@ -19,7 +19,7 @@ import useRefMounted from 'src/hooks/useRefMounted';
 import { useTranslation } from 'react-i18next';
 import { CustomSnackBarContext } from '../../../../contexts/CustomSnackBarContext';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { apiUrl, isSSOEnabled, oauth2Provider } from '../../../../config';
+import { getCurrentApiUrl, isSSOEnabled, oauth2Provider } from '../../../../config';
 
 const LoginJWT: FC = () => {
   const { login } = useAuth() as any;
@@ -142,7 +142,7 @@ const LoginJWT: FC = () => {
 
               <Button
                 onClick={() => {
-                  window.location.href = `${apiUrl}oauth2/authorize/${oauth2Provider.toLowerCase()}`;
+                  window.location.href = `${getCurrentApiUrl()}oauth2/authorize/${oauth2Provider.toLowerCase()}`;
                 }}
                 fullWidth
                 size="large"

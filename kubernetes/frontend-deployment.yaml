@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: YOUR_REGISTRY/cmms-frontend:latest
+        env:
+        - name: API_URL
+          value: "http://api.mms.example.com"
+        - name: GOOGLE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: google-key
+        - name: GOOGLE_TRACKING_ID
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: google-tracking-id
+        - name: MUI_X_LICENSE
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: mui-x-license
+        - name: INVITATION_VIA_EMAIL
+          value: "false"
+        - name: CLOUD_VERSION
+          value: "true"
+        - name: NODE_ENV
+          value: "production"
+        - name: ENABLE_SSO
+          value: "false"
+        - name: LOGO_PATHS
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: logo-paths
+        - name: CUSTOM_COLORS
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: custom-colors
+        - name: BRAND_CONFIG
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: brand-config
+        - name: DEMO_LINK
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: demo-link
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000

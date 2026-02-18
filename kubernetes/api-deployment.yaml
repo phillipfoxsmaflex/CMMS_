@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  labels:
+    app: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: YOUR_REGISTRY/cmms-api:latest
+        env:
+        - name: DB_URL
+          value: "postgres:5432/mms"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: postgres-user
+        - name: DB_PWD
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: postgres-password
+        - name: PUBLIC_API_URL
+          value: "http://api.mms.example.com"
+        - name: PUBLIC_FRONT_URL
+          value: "http://app.mms.example.com"
+        - name: frontend.url
+          value: "http://app.mms.example.com"
+        - name: FASTSPRING_PWD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: fastspring-pwd
+        - name: FASTSPRING_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: fastspring-user
+        - name: SMTP_PWD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: smtp-pwd
+        - name: SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: smtp-user
+        - name: SMTP_HOST
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: smtp-host
+        - name: SMTP_PORT
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: smtp-port
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: jwt-secret-key
+        - name: MINIO_ENDPOINT
+          value: "http://minio:9000"
+        - name: MINIO_BUCKET
+          value: "mms-bucket"
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-secrets
+              key: minio-user
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-secrets
+              key: minio-password
+        - name: STORAGE_TYPE
+          value: "minio"
+        - name: PUBLIC_MINIO_ENDPOINT
+          value: "http://minio.mms.example.com"
+        - name: INVITATION_VIA_EMAIL
+          value: "false"
+        - name: ENABLE_EMAIL_NOTIFICATIONS
+          value: "false"
+        - name: ENABLE_SSO
+          value: "false"
+        - name: LICENSE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: license-key
+        - name: LICENSE_FINGERPRINT_REQUIRED
+          value: "true"
+        - name: LOGO_PATHS
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: logo-paths
+        - name: CUSTOM_COLORS
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: custom-colors
+        - name: BRAND_CONFIG
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: brand-config
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  selector:
+    app: api
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

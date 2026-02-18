@@ -1,0 +1,34 @@
+apiVersion: 1
+
+# PostgreSQL Data Source Configuration
+datasources:
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: mms
+    user: ${POSTGRES_USER}
+    secureJsonData:
+      password: ${POSTGRES_PWD}
+    jsonData:
+      sslmode: "disable"
+      postgresVersion: 1600
+      timescaledb: false
+    editable: true
+    isDefault: true
+
+  # PostgreSQL with TimescaleDB extension (if needed)
+  - name: PostgreSQL-Timescale
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: mms
+    user: ${POSTGRES_USER}
+    secureJsonData:
+      password: ${POSTGRES_PWD}
+    jsonData:
+      sslmode: "disable"
+      postgresVersion: 1600
+      timescaledb: true
+    editable: true
+    isDefault: false

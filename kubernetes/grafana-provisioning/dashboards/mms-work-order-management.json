@@ -1,0 +1,448 @@
+{
+  "title": "MMS Work Order Management",
+  "description": "Operational dashboard for work order tracking, status monitoring, and performance analysis",
+  "tags": [
+    "work orders",
+    "operations",
+    "management"
+  ],
+  "uid": "mms-work-order-management",
+  "version": 1,
+  "timezone": "browser",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ],
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "preload": true,
+  "refresh": "10m",
+  "schemaVersion": 37,
+  "style": "dark",
+  "panels": [
+    {
+      "title": "Work Order Status Overview",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "title": "Work Order Status Distribution",
+      "type": "piechart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  status, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP \nGROUP BY status \nORDER BY count DESC",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Work Orders by Priority",
+      "type": "barchart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  priority, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP \nGROUP BY priority \nORDER BY priority",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Work Order Response Time",
+      "type": "stat",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dtdurations",
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 8
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  AVG(EXTRACT(EPOCH FROM (first_time_to_react - created_at)) / 3600) as avg_response_time_hours \nFROM work_order wo \nWHERE wo.first_time_to_react IS NOT NULL \n  AND wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Work Order Completion Time",
+      "type": "stat",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dtdurations",
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 8
+              },
+              {
+                "color": "red",
+                "value": 24
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  AVG(EXTRACT(EPOCH FROM (completed_on - created_at)) / 3600) as avg_completion_time_hours \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.completed_on >= $__timeFrom()::TIMESTAMP \n  AND wo.completed_on <= $__timeTo()::TIMESTAMP",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Work Order Trends",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "title": "Work Orders Created vs Completed",
+      "type": "timeseries",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  DATE_TRUNC('day', created_at) as time, \n  'Created' as metric, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP \nGROUP BY DATE_TRUNC('day', created_at) \nUNION ALL \nSELECT \n  DATE_TRUNC('day', completed_on) as time, \n  'Completed' as metric, \n  COUNT(*) as count \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.completed_on >= $__timeFrom()::TIMESTAMP \n  AND wo.completed_on <= $__timeTo()::TIMESTAMP \nGROUP BY DATE_TRUNC('day', completed_on) \nORDER BY time, metric",
+          "format": "time_series",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Work Order Backlog",
+      "type": "timeseries",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "WITH daily_counts AS ( \n  SELECT \n    DATE_TRUNC('day', ts.slot) as time, \n    COUNT(CASE WHEN wo.status NOT IN ('COMPLETED', 'CANCELLED') THEN 1 END) as open_count, \n    COUNT(CASE WHEN wo.status = 'COMPLETED' THEN 1 END) as completed_count \n  FROM ( \n    SELECT generate_series( \n      $__timeFrom(), \n      $__timeTo(), \n      '1 day'::interval \n    ) as slot \n  ) ts \n  LEFT JOIN work_order wo ON \n    DATE_TRUNC('day', wo.created_at) <= ts.slot \n    AND (wo.completed_on IS NULL OR DATE_TRUNC('day', wo.completed_on) > ts.slot) \n    AND (wo.status <> 'CANCELLED' OR DATE_TRUNC('day', wo.created_at) = ts.slot) \n  GROUP BY DATE_TRUNC('day', ts.slot) \n) \nSELECT \n  time, \n  open_count as backlog \nFROM daily_counts \nORDER BY time",
+          "format": "time_series",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "SLA Compliance",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      }
+    },
+    {
+      "title": "SLA Compliance Rate",
+      "type": "gauge",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 100,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 85
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  (COUNT(CASE WHEN completed_on <= due_date THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)) as sla_compliance_rate \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.due_date IS NOT NULL \n  AND wo.completed_on >= $__timeFrom()::TIMESTAMP \n  AND wo.completed_on <= $__timeTo()::TIMESTAMP",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Overdue Work Orders",
+      "type": "stat",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  COUNT(*) as overdue_count \nFROM work_order wo \nWHERE wo.status NOT IN ('COMPLETED', 'CANCELLED') \n  AND wo.due_date < NOW() \n  AND wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Average Time to Complete by Priority",
+      "type": "barchart",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dtdurations",
+          "decimals": 2
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  priority, \n  AVG(EXTRACT(EPOCH FROM (completed_on - created_at)) / 3600) as avg_completion_hours \nFROM work_order wo \nWHERE wo.status = 'COMPLETED' \n  AND wo.completed_on >= $__timeFrom()::TIMESTAMP \n  AND wo.completed_on <= $__timeTo()::TIMESTAMP \nGROUP BY priority \nORDER BY priority",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Work Order Details",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      }
+    },
+    {
+      "title": "Recent Work Orders",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT \n  wo.id as work_order_id, \n  wo.custom_id as work_order_custom_id, \n  wo.title as title, \n  wo.status as status, \n  wo.priority as priority, \n  a.name as asset_name, \n  l.name as location_name, \n  wo.created_at as created_at, \n  wo.due_date as due_date, \n  wo.completed_on as completed_on, \n  EXTRACT(EPOCH FROM (wo.completed_on - wo.created_at)) / 3600 as completion_time_hours, \n  CASE WHEN wo.completed_on <= wo.due_date THEN 'On Time' ELSE 'Overdue' END as sla_status, \n  (SELECT COUNT(*) FROM labor lab WHERE lab.work_order_id = wo.id) as labor_entries, \n  (SELECT COUNT(*) FROM part_consumption pc WHERE pc.work_order_id = wo.id) as parts_used \nFROM work_order wo \nLEFT JOIN asset a ON wo.asset_id = a.id \nLEFT JOIN location l ON wo.location_id = l.id \nWHERE wo.created_at >= $__timeFrom()::TIMESTAMP \n  AND wo.created_at <= $__timeTo()::TIMESTAMP \nORDER BY wo.created_at DESC \nLIMIT 50",
+          "format": "table",
+          "hide": false,
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

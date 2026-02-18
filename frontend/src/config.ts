@@ -22,12 +22,46 @@ export const googleMapsConfig = {
   apiKey: getRuntimeValue('GOOGLE_KEY')
 };
 
-const rawApiUrl = getRuntimeValue('API_URL');
-export const apiUrl = rawApiUrl
-  ? rawApiUrl.endsWith('/')
-    ? rawApiUrl
-    : rawApiUrl + '/'
-  : 'http://localhost:8080/';
+// Funktion zum sicheren Abrufen der API-URL mit Fallback
+const getApiUrl = (): string => {
+  // Versuchen Sie zuerst, die URL aus der Runtime-Konfiguration zu erhalten
+  const runtimeApiUrl = window.__RUNTIME_CONFIG__?.API_URL?.trim();
+  
+  // Debugging: Geben Sie die gefundene URL aus
+  console.log('API URL Debug:', {
+    runtimeConfigAvailable: !!window.__RUNTIME_CONFIG__,
+    runtimeApiUrl: runtimeApiUrl,
+    envApiUrl: process.env.REACT_APP_API_URL,
+    willUseRuntime: !!runtimeApiUrl
+  });
+  
+  // Wenn Runtime-Konfiguration verfügbar ist, verwenden Sie diese
+  if (runtimeApiUrl) {
+    const finalUrl = runtimeApiUrl.endsWith('/') ? runtimeApiUrl : runtimeApiUrl + '/';
+    console.log('Using Runtime API URL:', finalUrl);
+    return finalUrl;
+  }
+  
+  // Fallback auf Umgebungsvariable (für Entwicklung)
+  const envApiUrl = process.env.REACT_APP_API_URL?.trim();
+  if (envApiUrl) {
+    const finalUrl = envApiUrl.endsWith('/') ? envApiUrl : envApiUrl + '/';
+    console.log('Using Env API URL:', finalUrl);
+    return finalUrl;
+  }
+  
+  // Letzter Fallback für lokale Entwicklung
+  console.log('Using Fallback API URL: http://localhost:8080/');
+  return 'http://localhost:8080/';
+};
+
+// Exportieren Sie eine Funktion statt einer Konstante, um sicherzustellen, dass wir immer den aktuellen Wert erhalten
+export const getCurrentApiUrl = (): string => {
+  return getApiUrl();
+};
+
+// Exportieren Sie die aktuelle API-URL für Kompatibilität
+export const apiUrl = getCurrentApiUrl();
 
 export const muiLicense = getRuntimeValue('MUI_X_LICENSE');
 
