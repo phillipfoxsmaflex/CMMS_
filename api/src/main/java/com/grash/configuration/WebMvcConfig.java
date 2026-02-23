@@ -47,6 +47,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
         allowedOriginsList.add("http://localhost:12000");
         allowedOriginsList.add("http://localhost:12001");
         
+        // Add local network IP for development
+        allowedOriginsList.add("http://192.168.178.123:3000");
+        allowedOriginsList.add("http://192.168.178.123:8080");
+        
         String[] allowedOrigins = allowedOriginsList.toArray(new String[0]);
         
         registry.addMapping("/**")

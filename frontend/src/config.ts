@@ -27,7 +27,7 @@ export const apiUrl = rawApiUrl
   ? rawApiUrl.endsWith('/')
     ? rawApiUrl
     : rawApiUrl + '/'
-  : 'http://localhost:8080/';
+  : 'http://192.168.178.123:8080/api/';
 
 export const muiLicense = getRuntimeValue('MUI_X_LICENSE');
 

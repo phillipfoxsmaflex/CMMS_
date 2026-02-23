@@ -28,6 +28,7 @@ import { getAssetsByLocation } from '../../../slices/asset';
 import { getWorkOrdersByLocation } from '../../../slices/workOrder';
 import { getFloorPlans } from '../../../slices/floorPlan';
 import { renderToStaticMarkup } from 'react-dom/server';
+import api from '../../../utils/api';
 import CloseIcon from '@mui/icons-material/Close';
 import BuildIcon from '@mui/icons-material/Build';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -262,7 +263,7 @@ export default function LocationFloorPlanMap({ locationId, statusFilter = [], wo
 
   // Load image dimensions dynamically when floor plan changes
   useEffect(() => {
-    if (!selectedFloorPlan?.image?.url) {
+    if (!selectedFloorPlan?.image?.id) {
       setLoadedImageDimensions(null);
       return;
     }
@@ -315,11 +316,39 @@ export default function LocationFloorPlanMap({ locationId, statusFilter = [], wo
       }
     };
     img.onerror = () => {
-      console.error('Failed to load floor plan image');
-      // Fallback to default dimensions
-      setLoadedImageDimensions({ width: 1000, height: 800 });
+      console.error('Failed to load floor plan image from URL:', imageUrl);
+      
+      // Enhanced error handling with fallback strategy
+      if (selectedFloorPlan.image?.url && imageUrl !== selectedFloorPlan.image.url) {
+        console.log('Trying fallback to signed URL:', selectedFloorPlan.image.url);
+        // Try the signed URL as fallback
+        const fallbackImg = new Image();
+        fallbackImg.onload = () => {
+          const dimensions = {
+            width: fallbackImg.naturalWidth,
+            height: fallbackImg.naturalHeight
+          };
+          setLoadedImageDimensions(dimensions);
+        };
+        fallbackImg.onerror = () => {
+          console.error('Failed to load floor plan image using signed URL fallback');
+          // Final fallback to default dimensions
+          setLoadedImageDimensions({ width: 1000, height: 800 });
+        };
+        fallbackImg.src = selectedFloorPlan.image.url;
+      } else {
+        console.error('No fallback URL available or already tried signed URL, using default dimensions');
+        // Fallback to default dimensions
+        setLoadedImageDimensions({ width: 1000, height: 800 });
+      }
     };
-    img.src = selectedFloorPlan.image.url;
+    // Always try direct download endpoint first, fallback to signed URL if needed
+    const imageUrl = selectedFloorPlan.image?.id 
+      ? api.getFileDownloadUrl(selectedFloorPlan.image.id)
+      : selectedFloorPlan.image?.url || '';
+    
+    console.log('Loading floor plan image from URL:', imageUrl);
+    img.src = imageUrl;
   }, [selectedFloorPlan]);
 
   const handleDragEnd = (assetId: number, position: [number, number]) => {
@@ -551,8 +580,11 @@ export default function LocationFloorPlanMap({ locationId, statusFilter = [], wo
   // Use dynamically loaded dimensions, fallback to DB values, then defaults
   const imageWidth = loadedImageDimensions?.width || selectedFloorPlan?.imageWidth || 1000;
   const imageHeight = loadedImageDimensions?.height || selectedFloorPlan?.imageHeight || 800;
-  const floorPlanImage = selectedFloorPlan?.image?.url || 
-    `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iJHtpbWFnZVdpZHRofSIgaGVpZ2h0PSIke2ltYWdlSGVpZ2h0fSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iJHtpbWFnZVdpZHRofSIgaGVpZ2h0PSIke2ltYWdlSGVpZ2h0fSIgZmlsbD0iI2Y1ZjVmNSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5GbG9vciBQbGFuIFBsYWNlaG9sZGVyPC90ZXh0Pgo8L3N2Zz4=`;
+  
+  // Use the new file download endpoint to avoid expired signed URLs
+  const floorPlanImage = selectedFloorPlan?.image?.id 
+    ? api.getFileDownloadUrl(selectedFloorPlan.image.id) 
+    : `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iJHtpbWFnZVdpZHRofSIgaGVpZ2h0PSIke2ltYWdlSGVpZ2h0fSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iJHtpbWFnZVdpZHRofSIgaGVpZ2h0PSIke2ltYWdlSGVpZ2h0fSIgZmlsbD0iI2Y1ZjVmNSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5GbG9vciBQbGFuIFBsYWNlaG9sZGVyPC90ZXh0Pgo8L3N2Zz4=`;
 
   // Bounds based on actual image dimensions (1:1 pixel mapping)
   const imageBounds: L.LatLngBoundsExpression = [[0, 0], [imageHeight, imageWidth]];

@@ -154,6 +154,46 @@ public class FileController {
         } else throw new CustomException("File not found", HttpStatus.NOT_FOUND);
     }
 
+    @GetMapping("/{id}/download")
+    @PreAuthorize("permitAll()")
+    @ApiResponses(value = {//
+            @ApiResponse(code = 500, message = "Something went wrong"),
+            @ApiResponse(code = 403, message = "Access denied"),
+            @ApiResponse(code = 404, message = "File not found")})
+    public ResponseEntity<byte[]> downloadFile(@ApiParam("id") @PathVariable("id") Long id, HttpServletRequest req) {
+        try {
+            OwnUser user = userService.whoami(req);
+            Optional<File> optionalFile = fileService.findById(id);
+            if (optionalFile.isPresent()) {
+                File savedFile = optionalFile.get();
+                if (user.getRole().getViewPermissions().contains(PermissionEntity.DOCUMENTS) &&
+                        (user.getRole().getViewOtherPermissions().contains(PermissionEntity.DOCUMENTS) || savedFile.getCreatedBy().equals(user.getId()))) {
+                    byte[] fileContent = storageServiceFactory.getStorageService().download(savedFile);
+                    return ResponseEntity.ok()
+                            .header("Content-Disposition", "inline; filename=\"" + savedFile.getName() + "\"")
+                            .body(fileContent);
+                } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
+            } else throw new CustomException("File not found", HttpStatus.NOT_FOUND);
+        } catch (IllegalArgumentException e) {
+            // Handle case where no JWT token is present (public access)
+            // For public file downloads, we still need to find the file but with different auth logic
+            Optional<File> optionalFile = fileService.findById(id);
+            if (optionalFile.isPresent()) {
+                File savedFile = optionalFile.get();
+                // For public access, we allow download if the file is not hidden
+                // This is a simplified approach - you might want more sophisticated logic
+                if (!savedFile.isHidden()) {
+                    byte[] fileContent = storageServiceFactory.getStorageService().download(savedFile);
+                    return ResponseEntity.ok()
+                            .header("Content-Disposition", "inline; filename=\"" + savedFile.getName() + "\"")
+                            .body(fileContent);
+                } else {
+                    throw new CustomException("File not accessible", HttpStatus.FORBIDDEN);
+                }
+            } else throw new CustomException("File not found", HttpStatus.NOT_FOUND);
+        }
+    }
+
 //    @GetMapping("/download/tos")
 //    public byte[] downloadTOS() {
 //        return storageServiceFactory.getStorageService().download("terms and privacy/Atlas CMMS Terms of service

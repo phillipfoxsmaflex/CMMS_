@@ -25,6 +25,15 @@ function get<T>(url, options?: Options) {
   return api<T>(normalizedUrl, options);
 }
 
+/**
+ * Generate a file download URL for direct file access
+ * @param fileId The ID of the file to download
+ * @returns The full URL to download the file
+ */
+function getFileDownloadUrl(fileId: number): string {
+  return `${apiUrl}files/${fileId}/download`;
+}
+
 function post<T>(url, data, options?: Options, isNotJson?: boolean) {
   const normalizedUrl = apiUrl.endsWith('/') && url.startsWith('/') ? apiUrl + url.substring(1) : apiUrl + url;
   console.log('[API POST DEBUG] Calling:', normalizedUrl, 'with data:', data);
@@ -81,4 +90,4 @@ export function authHeader(publicRoute: boolean, skipContentType: boolean = fals
   }
 }
 
-export default { get, patch, post, deletes };
+export default { get, patch, post, deletes, getFileDownloadUrl };

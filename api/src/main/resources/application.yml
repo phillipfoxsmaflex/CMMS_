@@ -73,7 +73,7 @@ server:
 # CORS Configuration to allow requests from frontend
 # Note: CORS is primarily configured in WebMvcConfig.java which reads from PUBLIC_API_URL and PUBLIC_FRONT_URL
 cors:
-  allowed-origins: http://localhost:8080,http://localhost:12000,${PUBLIC_API_URL},${PUBLIC_FRONT_URL}
+  allowed-origins: http://localhost:8080,http://localhost:12000,http://192.168.178.123:3000,http://192.168.178.123:8080,${PUBLIC_API_URL},${PUBLIC_FRONT_URL}
   allowed-methods: GET,POST,PUT,DELETE,OPTIONS
   allowed-headers: "*"
   allow-credentials: true

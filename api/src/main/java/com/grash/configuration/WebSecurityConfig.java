@@ -66,7 +66,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/health-check").permitAll()
                 .antMatchers("/mail/send").permitAll()
                 .antMatchers("/subscription-plans").permitAll()
-                .antMatchers("/files/download/tos", "/files/download/privacy-policy").permitAll()
+                .antMatchers("/files/download/tos", "/files/download/privacy-policy", "/files/*/download").permitAll()
                 .antMatchers("/ws/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/newsLetters").permitAll()
                 .antMatchers("/auth/activate-account**").permitAll()//

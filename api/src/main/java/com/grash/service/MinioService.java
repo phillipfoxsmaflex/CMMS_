@@ -17,7 +17,9 @@ import javax.annotation.PostConstruct;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
@@ -140,14 +142,16 @@ public class MinioService implements StorageService {
 
     public byte[] download(File file) {
         checkIfConfigured();
-        URI uri;
-        try {
-            uri = new URI(file.getPath());
-        } catch (URISyntaxException e) {
-            throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        String path = uri.getPath();
-        String filePath = "company " + file.getCompany().getId() + "/" + path.substring(path.lastIndexOf('/') + 1);
+        // Construct the file path manually to avoid URI parsing issues
+        String path = file.getPath();
+        // Extract just the filename part after the last slash
+        int lastSlashIndex = path.lastIndexOf('/');
+        String filename = (lastSlashIndex >= 0) ? path.substring(lastSlashIndex + 1) : path;
+        
+        // Construct the file path as Minio expects it
+        String filePath = "company " + file.getCompany().getId() + "/" + filename;
+        
+        // Don't URL encode - Minio should handle the path as-is
         return download(filePath);
     }
 
